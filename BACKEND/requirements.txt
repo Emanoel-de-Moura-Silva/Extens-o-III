@@ -1,0 +1,16 @@
+# Instala o Ollama
+curl -fsSL https://ollama.ai/install.sh | sh
+
+# Baixa o Llama 3.2 (3B parâmetros — ~2GB, roda em qualquer máquina)
+ollama pull llama3.2
+
+# Ou versão maior, mais precisa (requer GPU com 8GB+ VRAM)
+ollama pull llama3.1:8b
+
+# Testa se está funcionando
+ollama run llama3.2 "Responda só 'ok' se estiver funcionando"
+
+"pip install fastapi motor httpx uvicorn python-dotenv"
+pypdf2
+pytesseract
+pillow
