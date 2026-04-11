@@ -76,8 +76,11 @@ export default function JobCard({
                             borderRadius: "24px",
                             backgroundColor: "#fff",
                         },
+                        "& .MuiInputBase-input": {
+                            color: "#111827",
+                        },
                         "& .MuiInputBase-input::placeholder": {
-                            fontSize: "1rem",
+                            color: "#9ca3af",
                             opacity: 1,
                         },
                     }}
