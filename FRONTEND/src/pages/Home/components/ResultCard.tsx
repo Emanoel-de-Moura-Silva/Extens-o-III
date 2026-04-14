@@ -1,19 +1,12 @@
-import { Box, Button, Paper, Typography } from "@mui/material";
+import { Box, Chip, Paper, Typography } from "@mui/material";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
-import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
-import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
+import type { AnalyzeResumeResponse } from "../../../models/analyzer";
 
 type Props = {
-    resultado: string;
-    onBaixarTxt: () => void;
-    onBaixarPdf: () => void;
+    resultado: AnalyzeResumeResponse;
 };
 
-export default function ResultCard({
-    resultado,
-    onBaixarTxt,
-    onBaixarPdf,
-}: Props) {
+export default function ResultCard({ resultado }: Props) {
     return (
         <Paper
             elevation={0}
@@ -36,56 +29,75 @@ export default function ResultCard({
                 }}
             >
                 <AutoAwesomeIcon />
-                Currículo Adaptado
+                Resultado da Análise
             </Typography>
 
-            <Box
-                sx={{
-                    backgroundColor: "#f9fafb",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: 3,
-                    p: 3,
-                    mb: 3,
-                }}
-            >
-                <Typography
-                    component="pre"
-                    sx={{
-                        whiteSpace: "pre-wrap",
-                        fontFamily: "inherit",
-                        fontSize: "0.95rem",
-                        lineHeight: 1.7,
-                        m: 0,
-                    }}
-                >
-                    {resultado}
-                </Typography>
-            </Box>
+            <Box sx={{ display: "grid", gap: 3 }}>
+                <Box>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
+                        Título da vaga
+                    </Typography>
+                    <Typography>{resultado.titulo_vaga}</Typography>
+                </Box>
 
-            <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-                <Button
-                    variant="contained"
-                    startIcon={<InsertDriveFileIcon />}
-                    onClick={onBaixarTxt}
-                    sx={{
-                        backgroundColor: "#2d5c48",
-                        "&:hover": { backgroundColor: "#1e3f31" },
-                    }}
-                >
-                    Baixar como TXT
-                </Button>
+                <Box>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
+                        Compatibilidade
+                    </Typography>
+                    <Typography>{resultado.nivel_compatibilidade}%</Typography>
+                </Box>
 
-                <Button
-                    variant="contained"
-                    startIcon={<PictureAsPdfIcon />}
-                    onClick={onBaixarPdf}
-                    sx={{
-                        backgroundColor: "#e74c3c",
-                        "&:hover": { backgroundColor: "#c0392b" },
-                    }}
-                >
-                    Salvar como PDF
-                </Button>
+                <Box>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
+                        Resumo
+                    </Typography>
+                    <Typography>{resultado.resumo}</Typography>
+                </Box>
+
+                <Box>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
+                        Habilidades da vaga
+                    </Typography>
+                    <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                        {resultado.habilidades_vaga.map((item) => (
+                            <Chip key={item} label={item} />
+                        ))}
+                    </Box>
+                </Box>
+
+                <Box>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
+                        Pontos fortes
+                    </Typography>
+                    {resultado.pontos_fortes.map((item, index) => (
+                        <Typography key={index}>• {item}</Typography>
+                    ))}
+                </Box>
+
+                <Box>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
+                        Pontos fracos
+                    </Typography>
+                    {resultado.pontos_fracos.map((item, index) => (
+                        <Typography key={index}>• {item}</Typography>
+                    ))}
+                </Box>
+
+                <Box>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
+                        Habilidades faltantes
+                    </Typography>
+                    {resultado.habilidades_faltantes.map((item, index) => (
+                        <Typography key={index}>• {item}</Typography>
+                    ))}
+                </Box>
+
+                <Box>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
+                        Recomendação
+                    </Typography>
+                    <Typography>{resultado.recomendacao}</Typography>
+                </Box>
             </Box>
         </Paper>
     );

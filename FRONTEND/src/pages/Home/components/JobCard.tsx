@@ -3,21 +3,20 @@ import {
     Button,
     CircularProgress,
     Paper,
-    TextField,
     Typography,
 } from "@mui/material";
 import DescriptionIcon from "@mui/icons-material/Description";
 
 type Props = {
-    textoVaga: string;
-    onTextoVagaChange: (value: string) => void;
+    arquivo: File | null;
+    onFileChange: (file: File | null) => void;
     onAnalisar: () => void;
     loading: boolean;
 };
 
 export default function JobCard({
-    textoVaga,
-    onTextoVagaChange,
+    arquivo,
+    onFileChange,
     onAnalisar,
     loading,
 }: Props) {
@@ -62,29 +61,37 @@ export default function JobCard({
                         fontSize: "1rem",
                     }}
                 >
-                    Link da Vaga
+                    Foto ou print da vaga
                 </Typography>
 
-                <TextField
+                <Button
+                    variant="contained"
+                    component="label"
                     fullWidth
-                    placeholder="Cole o link da vaga aqui..."
-                    value={textoVaga}
-                    onChange={(e) => onTextoVagaChange(e.target.value)}
                     sx={{
                         mb: 4,
-                        "& .MuiOutlinedInput-root": {
-                            borderRadius: "24px",
-                            backgroundColor: "#fff",
-                        },
-                        "& .MuiInputBase-input": {
-                            color: "#111827",
-                        },
-                        "& .MuiInputBase-input::placeholder": {
-                            color: "#9ca3af",
-                            opacity: 1,
+                        backgroundColor: "#ffffff",
+                        color: "#163a63",
+                        fontWeight: 600,
+                        py: 2,
+                        borderRadius: "20px",
+                        boxShadow: "none",
+                        border: "1px solid #dbe3ef",
+                        textTransform: "none",
+                        "&:hover": {
+                            backgroundColor: "#f8fafc",
+                            boxShadow: "none",
                         },
                     }}
-                />
+                >
+                    {arquivo ? arquivo.name : "Selecionar imagem da vaga"}
+                    <input
+                        hidden
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => onFileChange(e.target.files?.[0] || null)}
+                    />
+                </Button>
 
                 <Button
                     variant="contained"
@@ -109,7 +116,7 @@ export default function JobCard({
                     {loading ? (
                         <>
                             <CircularProgress size={20} sx={{ mr: 1, color: "#163a63" }} />
-                            Analisando com IA...
+                            Analisando...
                         </>
                     ) : (
                         "Analisar Vaga"

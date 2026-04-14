@@ -1,90 +1,47 @@
 import { useState } from "react";
 import { Box, Container, Paper } from "@mui/material";
-import { api } from "../../services/api/api";
 import UploadCard from "./components/UploadCard";
 import JobCard from "./components/JobCard";
 import ResultCard from "./components/ResultCard";
 import ChatBar from "./components/ChatBar";
 import ThemeToggleButton from "../../components/ThemeToggleButton";
+import { analyzeResume } from "../../services/analyzerService";
+import type { AnalyzeResumeResponse } from "../../models/analyzer";
 
 function HomePage() {
-    const [arquivo, setArquivo] = useState<File | null>(null);
-    const [textoVaga, setTextoVaga] = useState("");
-    const [resultado, setResultado] = useState("");
+    const [resumePdf, setResumePdf] = useState<File | null>(null);
+    const [jobImage, setJobImage] = useState<File | null>(null);
+    const [resultado, setResultado] = useState<AnalyzeResumeResponse | null>(null);
     const [loading, setLoading] = useState(false);
     const [erro, setErro] = useState("");
     const [mensagemChat, setMensagemChat] = useState("");
 
     const handleAnalisar = async () => {
-        if (!arquivo || !textoVaga.trim()) {
-            setErro("Por favor, envie um currículo e cole a descrição da vaga.");
+        if (!resumePdf || !jobImage) {
+            setErro("Por favor, envie o currículo em PDF e a imagem da vaga.");
             return;
         }
 
         setErro("");
-        setResultado("");
+        setResultado(null);
         setLoading(true);
 
-        const formData = new FormData();
-        formData.append("arquivo_curriculo", arquivo);
-        formData.append("texto_vaga", textoVaga);
-
         try {
-            const response = await api.post("/analisar-vaga", formData, {
-                headers: {
-                    "Content-Type": "multipart/form-data",
-                },
+            const response = await analyzeResume({
+                job_image: jobImage,
+                resume_pdf: resumePdf,
             });
 
-            if (response.data.status === "sucesso") {
-                setResultado(response.data.curriculo_adaptado);
-            } else {
-                setErro(response.data.mensagem || "Erro desconhecido no servidor.");
-            }
+            setResultado(response);
         } catch (error: any) {
             setErro(
+                error?.response?.data?.detail ||
                 error?.response?.data?.mensagem ||
-                "Erro ao conectar com o servidor. Verifique se o Flask e o Ollama estão rodando."
+                "Erro ao conectar com o servidor."
             );
         } finally {
             setLoading(false);
         }
-    };
-
-    const baixarTxt = () => {
-        const blob = new Blob([resultado], { type: "text/plain;charset=utf-8" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "Curriculo_Adaptado_IA.txt";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    };
-
-    const baixarPdf = () => {
-        const janelaPDF = window.open("", "", "width=800,height=600");
-        if (!janelaPDF) return;
-
-        janelaPDF.document.write(`
-      <html>
-        <head>
-          <title>Currículo Adaptado</title>
-          <style>
-            body { font-family: Arial, sans-serif; color: #333; line-height: 1.6; padding: 40px; }
-            pre { white-space: pre-wrap; font-family: inherit; margin: 0; }
-          </style>
-        </head>
-        <body>
-          <pre>${resultado.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre>
-          <script>
-            window.onload = function() { window.print(); window.close(); }
-          <\/script>
-        </body>
-      </html>
-    `);
-        janelaPDF.document.close();
     };
 
     return (
@@ -106,6 +63,7 @@ function HomePage() {
                 >
                     <ThemeToggleButton />
                 </Box>
+
                 <Box
                     sx={{
                         display: "grid",
@@ -118,11 +76,11 @@ function HomePage() {
                         alignItems: "stretch",
                     }}
                 >
-                    <UploadCard arquivo={arquivo} onFileChange={setArquivo} />
+                    <UploadCard arquivo={resumePdf} onFileChange={setResumePdf} />
 
                     <JobCard
-                        textoVaga={textoVaga}
-                        onTextoVagaChange={setTextoVaga}
+                        arquivo={jobImage}
+                        onFileChange={setJobImage}
                         onAnalisar={handleAnalisar}
                         loading={loading}
                     />
@@ -144,13 +102,7 @@ function HomePage() {
                     </Paper>
                 )}
 
-                {!!resultado && (
-                    <ResultCard
-                        resultado={resultado}
-                        onBaixarTxt={baixarTxt}
-                        onBaixarPdf={baixarPdf}
-                    />
-                )}
+                {resultado && <ResultCard resultado={resultado} />}
 
                 <ChatBar
                     mensagem={mensagemChat}

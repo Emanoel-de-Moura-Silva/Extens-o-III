@@ -58,7 +58,7 @@ export default function UploadCard({ arquivo, onFileChange }: Props) {
                     fontSize: "0.95rem",
                 }}
             >
-                (Formatos PDF e DOCX)
+                (Formato PDF)
             </Typography>
 
             <Button
@@ -84,7 +84,7 @@ export default function UploadCard({ arquivo, onFileChange }: Props) {
                 <input
                     hidden
                     type="file"
-                    accept=".pdf,.docx"
+                    accept=".pdf,application/pdf"
                     onChange={(e) => onFileChange(e.target.files?.[0] || null)}
                 />
             </Button>
