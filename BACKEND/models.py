@@ -19,3 +19,16 @@ class AnalysisResult(BaseModel):
     habilidades_faltantes: list[str]
     recomendacao: str
     resumo: str
+
+class InterviewQuestionsRequest(BaseModel):
+    titulo_vaga: str
+    habilidades_vaga: list[str]
+    pontos_fortes: list[str]
+    pontos_fracos: list[str]
+    habilidades_faltantes: list[str]
+    nivel_compatibilidade: int
+
+class InterviewQuestionsResult(BaseModel):
+    titulo_vaga: str
+    total_perguntas: int
+    perguntas: list[str]
