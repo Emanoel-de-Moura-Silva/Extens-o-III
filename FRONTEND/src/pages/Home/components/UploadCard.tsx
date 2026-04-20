@@ -15,7 +15,7 @@ export default function UploadCard({ arquivo, onFileChange }: Props) {
                 borderRadius: "32px",
                 border: "1px solid #edf2f7",
                 textAlign: "center",
-                minHeight: 430,
+                minHeight: 454,
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "center",

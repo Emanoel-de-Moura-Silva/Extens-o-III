@@ -1,25 +1,29 @@
-import { api } from "./api/api";
-import type {
-  AnalyzeResumeRequest,
-  AnalyzeResumeResponse,
-} from "../models/analyzer";
+import {api} from "./api/api";
+import type { AnalyzeResumeResponse } from "../models/analyzer";
 
-export async function analyzeResume(
-  payload: AnalyzeResumeRequest
-): Promise<AnalyzeResumeResponse> {
-  const formData = new FormData();
-  formData.append("job_image", payload.job_image);
-  formData.append("resume_pdf", payload.resume_pdf);
+export async function analyzeResume(formData: {
+    job_image: File;
+    resume_pdf: File;
+}) {
+    const data = new FormData();
+    data.append("job_image", formData.job_image);
+    data.append("resume_pdf", formData.resume_pdf);
 
-  const { data } = await api.post<AnalyzeResumeResponse>(
-    "/analyze",
-    formData,
-    {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    }
-  );
+    const response = await api.post("/api/v1/analyze-resume", data, {
+        headers: {
+            "Content-Type": "multipart/form-data",
+        },
+    });
 
-  return data;
+    return response.data;
+}
+
+export async function getInterviewQuestions(payload: AnalyzeResumeResponse) {
+    const response = await api.post("/api/v1/interview-questions", payload);
+    return response.data;
+}
+
+export async function getImprovementRecommendations(payload: AnalyzeResumeResponse) {
+    const response = await api.post("/api/v1/improvement-recommendations", payload);
+    return response.data;
 }
