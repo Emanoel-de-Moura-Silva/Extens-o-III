@@ -9,7 +9,7 @@ export async function analyzeResume(formData: {
     data.append("job_image", formData.job_image);
     data.append("resume_pdf", formData.resume_pdf);
 
-    const response = await api.post("/api/v1/analyze-resume", data, {
+    const response = await api.post("/analyze", data, {
         headers: {
             "Content-Type": "multipart/form-data",
         },
@@ -19,11 +19,11 @@ export async function analyzeResume(formData: {
 }
 
 export async function getInterviewQuestions(payload: AnalyzeResumeResponse) {
-    const response = await api.post("/api/v1/interview-questions", payload);
+    const response = await api.post("/interview-questions", payload);
     return response.data;
 }
 
 export async function getImprovementRecommendations(payload: AnalyzeResumeResponse) {
-    const response = await api.post("/api/v1/improvement-recommendations", payload);
+    const response = await api.post("/improvement-recommendations", payload);
     return response.data;
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Box, Container, Paper, Fade, Slide, Typography } from "@mui/material";
 import UploadCard from "./components/UploadCard";
 import JobCard from "./components/JobCard";
@@ -24,6 +24,7 @@ function HomePage() {
 
     const [respostaExtraTitulo, setRespostaExtraTitulo] = useState("");
     const [respostaExtraItems, setRespostaExtraItems] = useState<string[]>([]);
+    const respostaExtraRef = useRef<HTMLDivElement | null>(null);
 
     const { openLoading, closeLoading, isLoading } = useLoading();
 
@@ -43,25 +44,36 @@ function HomePage() {
         openLoading("Analisando vaga...");
 
         try {
+            console.log("ANTES DO SERVICE");
+
             const response = await analyzeResume({
                 job_image: jobImage,
                 resume_pdf: resumePdf,
             });
 
-            closeLoading();
+            console.log("RESPOSTA DO SERVICE:", response);
+            console.log("DEPOIS DO SERVICE");
+
             setMostrarCards(false);
 
             setTimeout(() => {
+                console.log("SETANDO RESULTADO:", response);
                 setResultado(response);
                 setMostrarResultado(true);
             }, 450);
         } catch (error: any) {
-            closeLoading();
+            console.error("ERRO COMPLETO NO HANDLE_ANALISAR:", error);
+            console.error("error.response?.data:", error?.response?.data);
+            console.error("error.message:", error?.message);
+
             setErro(
                 error?.response?.data?.detail ||
                 error?.response?.data?.mensagem ||
+                error?.message ||
                 "Erro ao conectar com o servidor."
             );
+        } finally {
+            closeLoading();
         }
     };
 
@@ -98,6 +110,13 @@ function HomePage() {
                     []
                 );
             }
+
+            setTimeout(() => {
+                respostaExtraRef.current?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start",
+                });
+            }, 100);
         } catch (error: any) {
             setErro(
                 error?.response?.data?.detail ||
@@ -181,48 +200,55 @@ function HomePage() {
                         </Box>
                     )}
 
-                    <Fade
-                        in={mostrarResultado}
-                        timeout={550}
-                        mountOnEnter
-                        unmountOnExit
-                    >
-                        <Box>
-                            {resultado && <ResultCard resultado={resultado} />}
+            <Fade
+    in={mostrarResultado}
+    timeout={550}
+    mountOnEnter
+    unmountOnExit
+>
+    <Box
+        sx={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 1,
+        }}
+    >
+        {resultado && <ResultCard resultado={resultado} />}
 
-                            <ChatBar
-                                visible={!!resultado}
-                                disabled={isLoading}
-                                onSelectScenario={handleSelectScenario}
-                            />
+        <Box ref={respostaExtraRef}>
+            {respostaExtraItems.length > 0 && (
+                <Paper
+                    elevation={0}
+                    sx={{
+                        p: 3,
+                        borderRadius: 4,
+                        border: "1px solid",
+                        borderColor: "divider",
+                        backgroundColor: "background.paper",
+                    }}
+                >
+                    <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
+                        {respostaExtraTitulo}
+                    </Typography>
 
-                            {respostaExtraItems.length > 0 && (
-                                <Paper
-                                    elevation={0}
-                                    sx={{
-                                        mt: 3,
-                                        p: 3,
-                                        borderRadius: 4,
-                                        border: "1px solid",
-                                        borderColor: "divider",
-                                        backgroundColor: "background.paper",
-                                    }}
-                                >
-                                    <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
-                                        {respostaExtraTitulo}
-                                    </Typography>
+                    <Box component="ul" sx={{ pl: 3, m: 0 }}>
+                        {respostaExtraItems.map((item, index) => (
+                            <Box component="li" key={`${item}-${index}`} sx={{ mb: 1 }}>
+                                <Typography variant="body1">{item}</Typography>
+                            </Box>
+                        ))}
+                    </Box>
+                </Paper>
+            )}
+        </Box>
 
-                                    <Box component="ul" sx={{ pl: 3, m: 0 }}>
-                                        {respostaExtraItems.map((item, index) => (
-                                            <Box component="li" key={`${item}-${index}`} sx={{ mb: 1 }}>
-                                                <Typography variant="body1">{item}</Typography>
-                                            </Box>
-                                        ))}
-                                    </Box>
-                                </Paper>
-                            )}
-                        </Box>
-                    </Fade>
+        <ChatBar
+            visible={!!resultado}
+            disabled={isLoading}
+            onSelectScenario={handleSelectScenario}
+        />
+    </Box>
+</Fade>
                 </Box>
 
                 {erro && (
