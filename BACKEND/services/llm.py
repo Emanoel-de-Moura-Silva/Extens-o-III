@@ -15,7 +15,7 @@ def image_to_base64(image_bytes: bytes) -> str:
 async def extract_job_from_image(image_bytes: bytes) -> str:
     image_b64 = image_to_base64(image_bytes)
 
-    async with httpx.AsyncClient(timeout=120.0) as client:
+    async with httpx.AsyncClient(timeout=240.0) as client:
         response = await client.post(
             OLLAMA_URL,
             json={
@@ -66,7 +66,7 @@ Retorne este JSON completo e fechado:
 }}
 <|eot_id|><|start_header_id|>assistant<|end_header_id|>"""
 
-    async with httpx.AsyncClient(timeout=120.0) as client:
+    async with httpx.AsyncClient(timeout=240.0) as client:
         response = await client.post(
             OLLAMA_URL,
             json={
@@ -149,7 +149,7 @@ Retorne SOMENTE este JSON:
 }}
 <|eot_id|><|start_header_id|>assistant<|end_header_id|>"""
 
-    async with httpx.AsyncClient(timeout=120.0) as client:
+    async with httpx.AsyncClient(timeout=240.0) as client:
         response = await client.post(
             OLLAMA_URL,
             json={
