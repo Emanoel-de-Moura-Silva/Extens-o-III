@@ -1,8 +1,9 @@
 import json
 import re
 import base64
+import httpx
 
-from services.agent import _call_ollama
+from services.agent import OLLAMA_URL, _call_ollama
 
 VISION_MODEL = "moondream"
 ANALYSIS_MODEL = "llama3.2"

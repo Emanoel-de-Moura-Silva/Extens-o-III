@@ -11,7 +11,9 @@ from routes.jobs import router as jobs_router
 
 app = FastAPI(title="Resume Analyzer API")
 
-origins = os.getenv("ALLOWED_ORIGINS", "*").split(",")
+origins = os.getenv("ALLOWED_ORIGINS", "").split(",")
+origins = [origin for origin in origins if origin]
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -26,7 +28,7 @@ app.include_router(interview_router, prefix="/api/v1")
 app.include_router(improve_router, prefix="/api/v1")
 
 
-@app.get("/health") ## verifica se o servidor e o banco de dados estão operacionais
+@app.get("/health")
 async def health():
     try:
         await db.command("ping")
