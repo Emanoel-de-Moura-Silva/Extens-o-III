@@ -1,9 +1,9 @@
-import httpx
 import json
 import re
 import base64
 
-OLLAMA_URL = "http://localhost:11434/api/generate"
+from services.agent import _call_ollama
+
 VISION_MODEL = "moondream"
 ANALYSIS_MODEL = "llama3.2"
 
@@ -14,31 +14,23 @@ def image_to_base64(image_bytes: bytes) -> str:
 
 async def extract_job_from_image(image_bytes: bytes) -> str:
     image_b64 = image_to_base64(image_bytes)
-
-    async with httpx.AsyncClient(timeout=120.0) as client:
-        response = await client.post(
-            OLLAMA_URL,
-            json={
-                "model": VISION_MODEL,
-                "prompt": "List exactly what is written in this job posting image. Copy the exact text you see: job title, requirements, skills, and experience needed. Do not add or interpret anything.",
-                "images": [image_b64],
-                "stream": False,
-                "options": {
-                    "temperature": 0.0,
-                    "seed": 42
-                }
-            }
-        )
-        response.raise_for_status()
-
-    job_description = response.json()["response"]
+    job_description = await _call_ollama({
+        "model": VISION_MODEL,
+        "prompt": "List exactly what is written in this job posting image. Copy the exact text you see: job title, requirements, skills, and experience needed. Do not add or interpret anything.",
+        "images": [image_b64],
+        "stream": False,
+        "options": {
+            "temperature": 0.0,
+            "seed": 42
+        }
+    })
     print("VAGA EXTRAÍDA:", job_description)
     return job_description
 
 
 async def analyze_compatibility(job_description: str, resume_text: str) -> dict:
     prompt = f"""<|begin_of_text|><|start_header_id|>system<|end_header_id|>
-Você é um especialista em recrutamento. 
+Você é um especialista em recrutamento.
 Regras obrigatórias:
 - Responda SOMENTE com JSON válido e completo
 - Use APENAS informações presentes nos textos fornecidos
@@ -66,26 +58,18 @@ Retorne este JSON completo e fechado:
 }}
 <|eot_id|><|start_header_id|>assistant<|end_header_id|>"""
 
-    async with httpx.AsyncClient(timeout=120.0) as client:
-        response = await client.post(
-            OLLAMA_URL,
-            json={
-                "model": ANALYSIS_MODEL,
-                "prompt": prompt,
-                "stream": False,
-                "options": {
-                    "temperature": 0.0,
-                    "seed": 42,
-                    "num_predict": 2048
-                }
-            }
-        )
-        response.raise_for_status()
-
-    raw_text = response.json()["response"]
+    raw_text = await _call_ollama({
+        "model": ANALYSIS_MODEL,
+        "prompt": prompt,
+        "stream": False,
+        "options": {
+            "temperature": 0.0,
+            "seed": 42,
+            "num_predict": 2048
+        }
+    })
     print("RESPOSTA LLAMA:", raw_text)
 
-    # Tenta consertar JSON incompleto
     raw_text = raw_text.strip()
     if not raw_text.endswith("}"):
         raw_text += "}"
@@ -149,32 +133,16 @@ Retorne SOMENTE este JSON:
 }}
 <|eot_id|><|start_header_id|>assistant<|end_header_id|>"""
 
-    async with httpx.AsyncClient(timeout=120.0) as client:
-        response = await client.post(
-            OLLAMA_URL,
-            json={
-                "model": ANALYSIS_MODEL,
-                "prompt": prompt,
-                "stream": False,
-                "options": {
-                    "temperature": 0.3,
-                    "seed": 42,
-                    "num_predict": 2048
-                }
-            }
-        )
-        response.raise_for_status()
-
-    response_json = response.json()
-    print("RESPOSTA COMPLETA OLLAMA:", response_json)
-
-    if "message" in response_json:
-        raw_text = response_json["message"]["content"]
-    elif "response" in response_json:
-        raw_text = response_json["response"]
-    else:
-        raise ValueError(f"Formato de resposta inesperado: {response_json}")
-
+    raw_text = await _call_ollama({
+        "model": ANALYSIS_MODEL,
+        "prompt": prompt,
+        "stream": False,
+        "options": {
+            "temperature": 0.3,
+            "seed": 42,
+            "num_predict": 2048
+        }
+    })
     print("PERGUNTAS GERADAS:", raw_text)
 
     raw_text = raw_text.strip()
