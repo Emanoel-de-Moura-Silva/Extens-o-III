@@ -1,10 +1,8 @@
 .env
 .venv/
-<<<<<<< HEAD
 __pycache__/
 .claude/
-=======
 venv/
 __pycache__/
 readme
->>>>>>> origin/Manel
+.idea
