@@ -214,8 +214,8 @@ Backend/IA:
 * documentação
 * apresentação
 
-  ##Cronograma
-  
+## Cronograma
+  ![Cronograma](/img/cronograma.png)
 
 ---
 ## Tema final
