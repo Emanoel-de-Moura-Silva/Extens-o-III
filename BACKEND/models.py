@@ -47,6 +47,10 @@ class ResumeImprovementResult(BaseModel):
     acoes_prioritarias: list[str]
 
 
+class ImproveRequest(BaseModel):
+    resume_text: str
+
+
 class InterviewQuestionsRequest(BaseModel):
     titulo_vaga: str
     habilidades_vaga: list[str]
