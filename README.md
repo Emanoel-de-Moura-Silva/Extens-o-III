@@ -99,7 +99,7 @@ Isso já fecha um projeto muito bom.
 
 ## Backend
 
-* Node.js/Express ou FastAPI
+ FastAPI
 
 ## IA
 
