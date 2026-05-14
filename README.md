@@ -228,9 +228,3 @@ Backend/IA:
 * geração de perguntas de entrevista;
 * feedback textual personalizado;
 * plano de treino do candidato.
-
-## Formato da entrevista
-
-*somente texto*
-
-Isso é o ponto-chave para manter viável.
