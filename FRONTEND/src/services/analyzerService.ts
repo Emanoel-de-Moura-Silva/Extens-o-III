@@ -1,5 +1,7 @@
 import {api} from "./api/api";
 import type { AnalyzeResumeResponse } from "../models/analyzer";
+import type {  ImproveRequest,
+  ImproveResponse, } from "../models/improve";
 
 export async function analyzeResume(formData: {
     job_image: File;
@@ -23,7 +25,9 @@ export async function getInterviewQuestions(payload: AnalyzeResumeResponse) {
     return response.data;
 }
 
-export async function getImprovementRecommendations(payload: AnalyzeResumeResponse) {
-    const response = await api.post("/improvement-recommendations", payload);
-    return response.data;
+export async function getImprovementRecommendations(
+  payload: ImproveRequest
+): Promise<ImproveResponse> {
+  const response = await api.post("/improve", payload);
+  return response.data;
 }

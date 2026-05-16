@@ -13,3 +13,4 @@ export interface AnalyzeResumeResponse {
   recomendacao: string;
   resumo: string;
 }
+

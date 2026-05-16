@@ -13,6 +13,8 @@ import {
 } from "../../services/analyzerService";
 import type { AnalyzeResumeResponse } from "../../models/analyzer";
 import { useLoading } from "../../contexts/LoadingContext";
+import { ImproveResultCard } from "./components/ImproveResultCard";
+import type { ImproveResponse } from "../../models/improve";
 
 function HomePage() {
     const [resumePdf, setResumePdf] = useState<File | null>(null);
@@ -24,6 +26,9 @@ function HomePage() {
 
     const [respostaExtraTitulo, setRespostaExtraTitulo] = useState("");
     const [respostaExtraItems, setRespostaExtraItems] = useState<string[]>([]);
+
+    const [improveResponse, setImproveResponse] = useState<ImproveResponse | null>(null);
+
     const respostaExtraRef = useRef<HTMLDivElement | null>(null);
 
     const { openLoading, closeLoading, isLoading } = useLoading();
@@ -40,6 +45,7 @@ function HomePage() {
         setMostrarCards(true);
         setRespostaExtraTitulo("");
         setRespostaExtraItems([]);
+        setImproveResponse(null);
 
         openLoading("Analisando vaga...");
 
@@ -50,6 +56,7 @@ function HomePage() {
                 job_image: jobImage,
                 resume_pdf: resumePdf,
             });
+
 
             console.log("RESPOSTA DO SERVICE:", response);
             console.log("DEPOIS DO SERVICE");
@@ -76,6 +83,32 @@ function HomePage() {
             closeLoading();
         }
     };
+    const montarResumeTextParaImprove = (resultado: AnalyzeResumeResponse) => {
+        return `
+Título da vaga: ${resultado.titulo_vaga}
+
+Resumo da análise:
+${resultado.resumo}
+
+Nível de compatibilidade:
+${resultado.nivel_compatibilidade}%
+
+Pontos fortes:
+${resultado.pontos_fortes.join("\n")}
+
+Pontos fracos:
+${resultado.pontos_fracos.join("\n")}
+
+Habilidades da vaga:
+${resultado.habilidades_vaga.join("\n")}
+
+Habilidades faltantes:
+${resultado.habilidades_faltantes.join("\n")}
+
+Recomendação:
+${resultado.recomendacao}
+`.trim();
+    };
 
     const handleSelectScenario = async (scenario: ScenarioType) => {
         if (!resultado) return;
@@ -83,6 +116,7 @@ function HomePage() {
         setErro("");
         setRespostaExtraTitulo("");
         setRespostaExtraItems([]);
+        setImproveResponse(null);
 
         try {
             if (scenario === "interview") {
@@ -101,14 +135,21 @@ function HomePage() {
             if (scenario === "improve") {
                 openLoading("Gerando recomendações de melhoria...");
 
-                const response = await getImprovementRecommendations(resultado);
+                const response = await getImprovementRecommendations({
+                    resume_text: montarResumeTextParaImprove(resultado),
+                    titulo_vaga: resultado.titulo_vaga,
+                    habilidades_vaga: resultado.habilidades_vaga,
+                    nivel_compatibilidade: resultado.nivel_compatibilidade,
+                    pontos_fortes: resultado.pontos_fortes,
+                    pontos_fracos: resultado.pontos_fracos,
+                    habilidades_faltantes: resultado.habilidades_faltantes,
+                    recomendacao: resultado.recomendacao,
+                    resumo: resultado.resumo,
+                });
 
                 setRespostaExtraTitulo("Como melhorar seu currículo para esta vaga");
-                setRespostaExtraItems(
-                    response?.recomendacoes ||
-                    response?.recommendations ||
-                    []
-                );
+                setImproveResponse(response);
+                setRespostaExtraItems([]);
             }
 
             setTimeout(() => {
@@ -200,55 +241,61 @@ function HomePage() {
                         </Box>
                     )}
 
-            <Fade
-    in={mostrarResultado}
-    timeout={550}
-    mountOnEnter
-    unmountOnExit
->
-    <Box
-        sx={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 1,
-        }}
-    >
-        {resultado && <ResultCard resultado={resultado} />}
+                    <Fade
+                        in={mostrarResultado}
+                        timeout={550}
+                        mountOnEnter
+                        unmountOnExit
+                    >
+                        <Box
+                            sx={{
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 1,
+                            }}
+                        >
+                            {resultado && <ResultCard resultado={resultado} />}
 
-        <Box ref={respostaExtraRef}>
-            {respostaExtraItems.length > 0 && (
-                <Paper
-                    elevation={0}
-                    sx={{
-                        p: 3,
-                        borderRadius: 4,
-                        border: "1px solid",
-                        borderColor: "divider",
-                        backgroundColor: "background.paper",
-                    }}
-                >
-                    <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
-                        {respostaExtraTitulo}
-                    </Typography>
+                            <Box ref={respostaExtraRef}>
+                                {respostaExtraItems.length > 0 && (
+                                    <Paper
+                                        elevation={0}
+                                        sx={{
+                                            p: 3,
+                                            borderRadius: 4,
+                                            border: "1px solid",
+                                            borderColor: "divider",
+                                            backgroundColor: "background.paper",
+                                        }}
+                                    >
+                                        <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
+                                            {respostaExtraTitulo}
+                                        </Typography>
 
-                    <Box component="ul" sx={{ pl: 3, m: 0 }}>
-                        {respostaExtraItems.map((item, index) => (
-                            <Box component="li" key={`${item}-${index}`} sx={{ mb: 1 }}>
-                                <Typography variant="body1">{item}</Typography>
+                                        <Box component="ul" sx={{ pl: 3, m: 0 }}>
+                                            {respostaExtraItems.map((item, index) => (
+                                                <Box component="li" key={`${item}-${index}`} sx={{ mb: 1 }}>
+                                                    <Typography variant="body1">{item}</Typography>
+                                                </Box>
+                                            ))}
+                                        </Box>
+                                    </Paper>
+                                )}
+                                {improveResponse && (
+                                    <ImproveResultCard
+                                        data={improveResponse}
+                                        title={respostaExtraTitulo}
+                                    />
+                                )}
                             </Box>
-                        ))}
-                    </Box>
-                </Paper>
-            )}
-        </Box>
 
-        <ChatBar
-            visible={!!resultado}
-            disabled={isLoading}
-            onSelectScenario={handleSelectScenario}
-        />
-    </Box>
-</Fade>
+                            <ChatBar
+                                visible={!!resultado}
+                                disabled={isLoading}
+                                onSelectScenario={handleSelectScenario}
+                            />
+                        </Box>
+                    </Fade>
                 </Box>
 
                 {erro && (
