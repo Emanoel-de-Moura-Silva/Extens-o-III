@@ -6,6 +6,7 @@ import {
     LinearProgress,
     Paper,
     Typography,
+    useTheme,
 } from "@mui/material";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import type { AnalyzeResumeResponse } from "../../../models/analyzer";
@@ -20,29 +21,41 @@ function getCompatibilityLabel(value: number) {
     return "Baixa compatibilidade";
 }
 
-function getRecommendationColor(recomendacao: string) {
+function getRecommendationColor(recomendacao: string, isDark: boolean) {
     const value = recomendacao.toLowerCase();
 
     if (value.includes("recomendado") || value.includes("aprovado")) {
         return {
-            color: "#bbf7d0",
-            backgroundColor: "rgba(34, 197, 94, 0.14)",
-            border: "1px solid rgba(34, 197, 94, 0.35)",
+            color: isDark ? "#bbf7d0" : "#166534",
+            backgroundColor: isDark
+                ? "rgba(34, 197, 94, 0.14)"
+                : "rgba(22, 101, 52, 0.08)",
+            border: isDark
+                ? "1px solid rgba(34, 197, 94, 0.35)"
+                : "1px solid rgba(22, 101, 52, 0.22)",
         };
     }
 
     if (value.includes("desenvolvimento") || value.includes("atenção")) {
         return {
-            color: "#fde68a",
-            backgroundColor: "rgba(245, 158, 11, 0.14)",
-            border: "1px solid rgba(245, 158, 11, 0.35)",
+            color: isDark ? "#fde68a" : "#92400e",
+            backgroundColor: isDark
+                ? "rgba(245, 158, 11, 0.14)"
+                : "rgba(245, 158, 11, 0.10)",
+            border: isDark
+                ? "1px solid rgba(245, 158, 11, 0.35)"
+                : "1px solid rgba(146, 64, 14, 0.22)",
         };
     }
 
     return {
-        color: "#bfdbfe",
-        backgroundColor: "rgba(59, 130, 246, 0.14)",
-        border: "1px solid rgba(59, 130, 246, 0.35)",
+        color: isDark ? "#bfdbfe" : "#1d4ed8",
+        backgroundColor: isDark
+            ? "rgba(59, 130, 246, 0.14)"
+            : "rgba(59, 130, 246, 0.08)",
+        border: isDark
+            ? "1px solid rgba(59, 130, 246, 0.35)"
+            : "1px solid rgba(29, 78, 216, 0.20)",
     };
 }
 
@@ -81,18 +94,25 @@ function SectionList({
     title,
     items,
     icon,
+    colors,
 }: {
     title: string;
     items: string[];
     icon: ReactNode;
+    colors: {
+        sectionBg: string;
+        sectionBorder: string;
+        textPrimary: string;
+        textSecondary: string;
+    };
 }) {
     return (
         <Box
             sx={{
                 p: 2.5,
                 borderRadius: "22px",
-                backgroundColor: "rgba(255, 255, 255, 0.045)",
-                border: "1px solid rgba(255, 255, 255, 0.09)",
+                backgroundColor: colors.sectionBg,
+                border: colors.sectionBorder,
                 height: "100%",
             }}
         >
@@ -110,7 +130,7 @@ function SectionList({
                     variant="subtitle2"
                     sx={{
                         fontWeight: 800,
-                        color: "#f8fafc",
+                        color: colors.textPrimary,
                     }}
                 >
                     {title}
@@ -124,7 +144,7 @@ function SectionList({
                             variant="body2"
                             sx={{
                                 lineHeight: 1.6,
-                                color: "#cbd5e1",
+                                color: colors.textSecondary,
                             }}
                         >
                             {item}
@@ -137,8 +157,73 @@ function SectionList({
 }
 
 export default function ResultCard({ resultado }: Props) {
+    const theme = useTheme();
+    const isDark = theme.palette.mode === "dark";
+
     const compatibility = resultado.nivel_compatibilidade;
-    const recommendationStyle = getRecommendationColor(resultado.recomendacao);
+    const recommendationStyle = getRecommendationColor(resultado.recomendacao, isDark);
+
+    const colors = {
+        paperBg: isDark
+            ? "linear-gradient(180deg, rgba(15,23,42,0.98) 0%, rgba(15,23,42,0.92) 100%)"
+            : "linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)",
+
+        paperBorder: isDark
+            ? "1px solid rgba(148, 163, 184, 0.25)"
+            : "1px solid rgba(148, 163, 184, 0.30)",
+
+        titleColor: isDark ? "#d1fae5" : "#14532d",
+        textPrimary: isDark ? "#f8fafc" : "#0f172a",
+        textSecondary: isDark ? "#cbd5e1" : "#475569",
+        textMuted: isDark ? "#94a3b8" : "#64748b",
+
+        cardBg: isDark
+            ? "rgba(255, 255, 255, 0.045)"
+            : "rgba(248, 250, 252, 0.95)",
+
+        cardBorder: isDark
+            ? "1px solid rgba(255, 255, 255, 0.09)"
+            : "1px solid rgba(148, 163, 184, 0.25)",
+
+        compatibilityBg: isDark
+            ? "rgba(59, 130, 246, 0.10)"
+            : "rgba(239, 246, 255, 0.95)",
+
+        compatibilityBorder: isDark
+            ? "1px solid rgba(59, 130, 246, 0.25)"
+            : "1px solid rgba(59, 130, 246, 0.22)",
+
+        compatibilityText: isDark ? "#bfdbfe" : "#1d4ed8",
+
+        progressBg: isDark
+            ? "rgba(255,255,255,0.08)"
+            : "rgba(148, 163, 184, 0.22)",
+
+        progressBar: isDark ? "#93c5fd" : "#2563eb",
+
+        divider: isDark
+            ? "rgba(255,255,255,0.10)"
+            : "rgba(148, 163, 184, 0.28)",
+
+        chipBg: isDark
+            ? "rgba(148, 163, 184, 0.14)"
+            : "rgba(226, 232, 240, 0.75)",
+
+        chipBorder: isDark
+            ? "1px solid rgba(148, 163, 184, 0.22)"
+            : "1px solid rgba(148, 163, 184, 0.32)",
+
+        chipText: isDark ? "#e2e8f0" : "#334155",
+
+        successIconColor: isDark ? "#86efac" : "#15803d",
+        successIconBg: isDark ? "rgba(34, 197, 94, 0.14)" : "rgba(22, 163, 74, 0.10)",
+
+        warningIconColor: isDark ? "#facc15" : "#a16207",
+        warningIconBg: isDark ? "rgba(250, 204, 21, 0.14)" : "rgba(202, 138, 4, 0.10)",
+
+        infoIconColor: isDark ? "#93c5fd" : "#1d4ed8",
+        infoIconBg: isDark ? "rgba(147, 197, 253, 0.14)" : "rgba(37, 99, 235, 0.10)",
+    };
 
     return (
         <Paper
@@ -147,10 +232,9 @@ export default function ResultCard({ resultado }: Props) {
                 p: { xs: 3, md: 4 },
                 mb: 4,
                 borderRadius: "32px",
-                border: "1px solid rgba(148, 163, 184, 0.25)",
-                background:
-                    "linear-gradient(180deg, rgba(15,23,42,0.98) 0%, rgba(15,23,42,0.92) 100%)",
-                color: "#fff",
+                border: colors.paperBorder,
+                background: colors.paperBg,
+                color: colors.textPrimary,
             }}
         >
             <Box
@@ -167,7 +251,7 @@ export default function ResultCard({ resultado }: Props) {
                     variant="h6"
                     sx={{
                         fontWeight: 800,
-                        color: "#d1fae5",
+                        color: colors.titleColor,
                         display: "flex",
                         alignItems: "center",
                         gap: 1,
@@ -198,14 +282,14 @@ export default function ResultCard({ resultado }: Props) {
                     sx={{
                         p: 2.5,
                         borderRadius: "24px",
-                        backgroundColor: "rgba(255, 255, 255, 0.045)",
-                        border: "1px solid rgba(255, 255, 255, 0.09)",
+                        backgroundColor: colors.cardBg,
+                        border: colors.cardBorder,
                     }}
                 >
                     <Typography
                         variant="caption"
                         sx={{
-                            color: "#94a3b8",
+                            color: colors.textMuted,
                             fontWeight: 800,
                             textTransform: "uppercase",
                             letterSpacing: 0.8,
@@ -219,7 +303,7 @@ export default function ResultCard({ resultado }: Props) {
                         sx={{
                             mt: 1,
                             fontWeight: 850,
-                            color: "#f8fafc",
+                            color: colors.textPrimary,
                             lineHeight: 1.25,
                         }}
                     >
@@ -231,14 +315,14 @@ export default function ResultCard({ resultado }: Props) {
                     sx={{
                         p: 2.5,
                         borderRadius: "24px",
-                        backgroundColor: "rgba(59, 130, 246, 0.10)",
-                        border: "1px solid rgba(59, 130, 246, 0.25)",
+                        backgroundColor: colors.compatibilityBg,
+                        border: colors.compatibilityBorder,
                     }}
                 >
                     <Typography
                         variant="caption"
                         sx={{
-                            color: "#94a3b8",
+                            color: colors.textMuted,
                             fontWeight: 800,
                             textTransform: "uppercase",
                             letterSpacing: 0.8,
@@ -260,7 +344,7 @@ export default function ResultCard({ resultado }: Props) {
                             variant="h3"
                             sx={{
                                 fontWeight: 900,
-                                color: "#bfdbfe",
+                                color: colors.compatibilityText,
                                 lineHeight: 1,
                             }}
                         >
@@ -270,7 +354,7 @@ export default function ResultCard({ resultado }: Props) {
                         <Typography
                             variant="body2"
                             sx={{
-                                color: "#cbd5e1",
+                                color: colors.textSecondary,
                                 fontWeight: 700,
                             }}
                         >
@@ -285,10 +369,10 @@ export default function ResultCard({ resultado }: Props) {
                             mt: 2,
                             height: 9,
                             borderRadius: 999,
-                            backgroundColor: "rgba(255,255,255,0.08)",
+                            backgroundColor: colors.progressBg,
                             "& .MuiLinearProgress-bar": {
                                 borderRadius: 999,
-                                backgroundColor: "#93c5fd",
+                                backgroundColor: colors.progressBar,
                             },
                         }}
                     />
@@ -299,8 +383,8 @@ export default function ResultCard({ resultado }: Props) {
                 sx={{
                     p: 2.5,
                     borderRadius: "24px",
-                    backgroundColor: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(255,255,255,0.08)",
+                    backgroundColor: colors.cardBg,
+                    border: colors.cardBorder,
                     mb: 3,
                 }}
             >
@@ -309,7 +393,7 @@ export default function ResultCard({ resultado }: Props) {
                     sx={{
                         fontWeight: 800,
                         mb: 1,
-                        color: "#f8fafc",
+                        color: colors.textPrimary,
                     }}
                 >
                     Resumo
@@ -319,7 +403,7 @@ export default function ResultCard({ resultado }: Props) {
                     variant="body1"
                     sx={{
                         lineHeight: 1.7,
-                        color: "#cbd5e1",
+                        color: colors.textSecondary,
                     }}
                 >
                     {resultado.resumo}
@@ -332,7 +416,7 @@ export default function ResultCard({ resultado }: Props) {
                     sx={{
                         fontWeight: 800,
                         mb: 1.5,
-                        color: "#f8fafc",
+                        color: colors.textPrimary,
                     }}
                 >
                     Habilidades da vaga
@@ -344,9 +428,9 @@ export default function ResultCard({ resultado }: Props) {
                             key={item}
                             label={item}
                             sx={{
-                                color: "#e2e8f0",
-                                backgroundColor: "rgba(148, 163, 184, 0.14)",
-                                border: "1px solid rgba(148, 163, 184, 0.22)",
+                                color: colors.chipText,
+                                backgroundColor: colors.chipBg,
+                                border: colors.chipBorder,
                                 fontWeight: 700,
                             }}
                         />
@@ -354,7 +438,7 @@ export default function ResultCard({ resultado }: Props) {
                 </Box>
             </Box>
 
-            <Divider sx={{ borderColor: "rgba(255,255,255,0.10)", mb: 3 }} />
+            <Divider sx={{ borderColor: colors.divider, mb: 3 }} />
 
             <Box
                 sx={{
@@ -366,10 +450,16 @@ export default function ResultCard({ resultado }: Props) {
                 <SectionList
                     title="Pontos fortes"
                     items={resultado.pontos_fortes}
+                    colors={{
+                        sectionBg: colors.cardBg,
+                        sectionBorder: colors.cardBorder,
+                        textPrimary: colors.textPrimary,
+                        textSecondary: colors.textSecondary,
+                    }}
                     icon={
                         <CircleIcon
-                            color="#86efac"
-                            backgroundColor="rgba(34, 197, 94, 0.14)"
+                            color={colors.successIconColor}
+                            backgroundColor={colors.successIconBg}
                         >
                             ✓
                         </CircleIcon>
@@ -379,10 +469,16 @@ export default function ResultCard({ resultado }: Props) {
                 <SectionList
                     title="Pontos fracos"
                     items={resultado.pontos_fracos}
+                    colors={{
+                        sectionBg: colors.cardBg,
+                        sectionBorder: colors.cardBorder,
+                        textPrimary: colors.textPrimary,
+                        textSecondary: colors.textSecondary,
+                    }}
                     icon={
                         <CircleIcon
-                            color="#facc15"
-                            backgroundColor="rgba(250, 204, 21, 0.14)"
+                            color={colors.warningIconColor}
+                            backgroundColor={colors.warningIconBg}
                         >
                             !
                         </CircleIcon>
@@ -392,10 +488,16 @@ export default function ResultCard({ resultado }: Props) {
                 <SectionList
                     title="Habilidades faltantes"
                     items={resultado.habilidades_faltantes}
+                    colors={{
+                        sectionBg: colors.cardBg,
+                        sectionBorder: colors.cardBorder,
+                        textPrimary: colors.textPrimary,
+                        textSecondary: colors.textSecondary,
+                    }}
                     icon={
                         <CircleIcon
-                            color="#93c5fd"
-                            backgroundColor="rgba(147, 197, 253, 0.14)"
+                            color={colors.infoIconColor}
+                            backgroundColor={colors.infoIconBg}
                         >
                             +
                         </CircleIcon>
