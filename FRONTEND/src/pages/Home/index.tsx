@@ -15,10 +15,12 @@ import type { AnalyzeResumeResponse } from "../../models/analyzer";
 import { useLoading } from "../../contexts/LoadingContext";
 import { ImproveResultCard } from "./components/ImproveResultCard";
 import type { ImproveResponse } from "../../models/improve";
+import { JobDescriptionDialog } from "./components/JobDescriptionDialog";
 
 function HomePage() {
     const [resumePdf, setResumePdf] = useState<File | null>(null);
-    const [jobImage, setJobImage] = useState<File | null>(null);
+    const [jobDescription, setJobDescription] = useState("");
+    const [jobDescriptionDialogOpen, setJobDescriptionDialogOpen] = useState(false);
     const [resultado, setResultado] = useState<AnalyzeResumeResponse | null>(null);
     const [erro, setErro] = useState("");
     const [mostrarCards, setMostrarCards] = useState(true);
@@ -33,9 +35,11 @@ function HomePage() {
 
     const { openLoading, closeLoading, isLoading } = useLoading();
 
-    const handleAnalisar = async () => {
-        if (!resumePdf || !jobImage) {
-            setErro("Por favor, envie o currículo em PDF e a imagem da vaga.");
+    const handleAnalisar = async (jobDescriptionValue = jobDescription) => {
+        const descricaoVaga = jobDescriptionValue.trim();
+
+        if (!resumePdf || !descricaoVaga) {
+            setErro("Por favor, envie o currículo em PDF e informe o texto da vaga.");
             return;
         }
 
@@ -50,21 +54,14 @@ function HomePage() {
         openLoading("Analisando vaga...");
 
         try {
-            console.log("ANTES DO SERVICE");
-
             const response = await analyzeResume({
-                job_image: jobImage,
+                job_description: descricaoVaga,
                 resume_pdf: resumePdf,
             });
-
-
-            console.log("RESPOSTA DO SERVICE:", response);
-            console.log("DEPOIS DO SERVICE");
 
             setMostrarCards(false);
 
             setTimeout(() => {
-                console.log("SETANDO RESULTADO:", response);
                 setResultado(response);
                 setMostrarResultado(true);
             }, 450);
@@ -168,6 +165,11 @@ ${resultado.recomendacao}
             closeLoading();
         }
     };
+    const handleConfirmJobDescription = (texto: string) => {
+        setJobDescription(texto);
+        setJobDescriptionDialogOpen(false);
+        handleAnalisar(texto);
+    };
 
     return (
         <Box sx={{ minHeight: "100vh", backgroundColor: "background.default", py: 6 }}>
@@ -231,9 +233,8 @@ ${resultado.recomendacao}
                             >
                                 <Box>
                                     <JobCard
-                                        arquivo={jobImage}
-                                        onFileChange={setJobImage}
-                                        onAnalisar={handleAnalisar}
+                                        jobDescription={jobDescription}
+                                        onOpenJobDescription={() => setJobDescriptionDialogOpen(true)}
                                         loading={isLoading}
                                     />
                                 </Box>
@@ -313,6 +314,13 @@ ${resultado.recomendacao}
                         {erro}
                     </Paper>
                 )}
+                <JobDescriptionDialog
+                    open={jobDescriptionDialogOpen}
+                    initialValue={jobDescription}
+                    loading={isLoading}
+                    onClose={() => setJobDescriptionDialogOpen(false)}
+                    onConfirm={handleConfirmJobDescription}
+                />
             </Container>
         </Box>
     );

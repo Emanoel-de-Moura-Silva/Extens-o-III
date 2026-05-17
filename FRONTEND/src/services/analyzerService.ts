@@ -4,11 +4,11 @@ import type {  ImproveRequest,
   ImproveResponse, } from "../models/improve";
 
 export async function analyzeResume(formData: {
-    job_image: File;
+    job_description: string;
     resume_pdf: File;
 }) {
     const data = new FormData();
-    data.append("job_image", formData.job_image);
+    data.append("job_description", formData.job_description);
     data.append("resume_pdf", formData.resume_pdf);
 
     const response = await api.post("/analyze", data, {
