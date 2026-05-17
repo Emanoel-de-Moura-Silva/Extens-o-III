@@ -1,6 +1,6 @@
 import asyncio
 
-from duckduckgo_search import DDGS
+from ddgs import DDGS
 
 
 def _ddg_text(query: str, limit: int) -> list[dict]:

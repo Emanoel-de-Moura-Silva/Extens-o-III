@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException
 
@@ -28,7 +28,7 @@ async def get_related_jobs(request: RelatedJobsRequest):
             "titulo_vaga": request.titulo_vaga,
             "total": len(vagas),
             "vagas": [v.model_dump() for v in vagas],
-            "created_at": datetime.utcnow(),
+            "created_at": datetime.now(timezone.utc),
         })
     except Exception as e:
         print(f"[MongoDB] Falha ao salvar related_jobs (não crítico): {e}")

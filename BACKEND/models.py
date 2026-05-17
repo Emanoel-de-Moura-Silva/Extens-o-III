@@ -21,6 +21,12 @@ class AnalyzeRequest(BaseModel):
     resume_text: str
 
 
+class RelatedJob(BaseModel):
+    titulo: str
+    url: str
+    descricao: str
+
+
 class AnalysisResult(BaseModel):
     titulo_vaga: str
     habilidades_vaga: list[str]
@@ -30,6 +36,7 @@ class AnalysisResult(BaseModel):
     habilidades_faltantes: list[str]
     recomendacao: Recomendacao
     resumo: str
+    vagas_relacionadas: list[RelatedJob] = []
 
 
 class SecaoMelhoria(BaseModel):
@@ -64,12 +71,6 @@ class InterviewQuestionsResult(BaseModel):
     titulo_vaga: str
     total_perguntas: int
     perguntas: list[str]
-
-
-class RelatedJob(BaseModel):
-    titulo: str
-    url: str
-    descricao: str
 
 
 class RelatedJobsRequest(BaseModel):
