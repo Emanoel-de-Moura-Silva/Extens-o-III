@@ -16,6 +16,7 @@ import { useLoading } from "../../contexts/LoadingContext";
 import { ImproveResultCard } from "./components/ImproveResultCard";
 import type { ImproveResponse } from "../../models/improve";
 import { JobDescriptionDialog } from "./components/JobDescriptionDialog";
+import InterviewQuestionsCard from "./components/InterviewQuestionsCard";
 
 function HomePage() {
     const [resumePdf, setResumePdf] = useState<File | null>(null);
@@ -111,9 +112,6 @@ ${resultado.recomendacao}
         if (!resultado) return;
 
         setErro("");
-        setRespostaExtraTitulo("");
-        setRespostaExtraItems([]);
-        setImproveResponse(null);
 
         try {
             if (scenario === "interview") {
@@ -144,9 +142,7 @@ ${resultado.recomendacao}
                     resumo: resultado.resumo,
                 });
 
-                setRespostaExtraTitulo("Como melhorar seu currículo para esta vaga");
                 setImproveResponse(response);
-                setRespostaExtraItems([]);
             }
 
             setTimeout(() => {
@@ -259,34 +255,14 @@ ${resultado.recomendacao}
 
                             <Box ref={respostaExtraRef}>
                                 {respostaExtraItems.length > 0 && (
-                                    <Paper
-                                        elevation={0}
-                                        sx={{
-                                            p: 3,
-                                            borderRadius: 4,
-                                            border: "1px solid",
-                                            borderColor: "divider",
-                                            backgroundColor: "background.paper",
-                                        }}
-                                    >
-                                        <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
-                                            {respostaExtraTitulo}
-                                        </Typography>
-
-                                        <Box component="ul" sx={{ pl: 3, m: 0 }}>
-                                            {respostaExtraItems.map((item, index) => (
-                                                <Box component="li" key={`${item}-${index}`} sx={{ mb: 1 }}>
-                                                    <Typography variant="body1">{item}</Typography>
-                                                </Box>
-                                            ))}
-                                        </Box>
-                                    </Paper>
-                                )}
-                                {improveResponse && (
-                                    <ImproveResultCard
-                                        data={improveResponse}
+                                    <InterviewQuestionsCard
                                         title={respostaExtraTitulo}
+                                        questions={respostaExtraItems}
                                     />
+                                )}
+
+                                {improveResponse && (
+                                    <ImproveResultCard data={improveResponse} />
                                 )}
                             </Box>
 
