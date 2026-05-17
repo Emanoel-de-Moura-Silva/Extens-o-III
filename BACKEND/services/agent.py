@@ -1,5 +1,3 @@
-import asyncio
-import base64
 import hashlib
 import json
 import re
@@ -9,7 +7,6 @@ import httpx
 from fastapi import HTTPException
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
-VISION_MODEL = "moondream"
 ANALYSIS_MODEL = "llama3.2"
 
 _resume_cache: dict[str, str] = {}
@@ -51,24 +48,6 @@ async def _call_ollama(payload: dict) -> str:
 
 
 # ─── Tools ────────────────────────────────────────────────────────────────────
-
-async def tool_extract_job(image_bytes: bytes) -> str:
-    t = time.monotonic()
-    image_b64 = base64.b64encode(image_bytes).decode("utf-8")
-    result = await _call_ollama({
-        "model": VISION_MODEL,
-        "prompt": (
-            "You are analyzing a job posting image. "
-            "Extract and list in detail: job title, required technical skills, "
-            "required experience level (years), and main responsibilities."
-        ),
-        "images": [image_b64],
-        "stream": False,
-        "options": {"temperature": 0.1},
-    })
-    _log("tool_extract_job", time.monotonic() - t)
-    return result
-
 
 async def tool_extract_resume_profile(resume_text: str) -> str:
     resume_hash = hashlib.md5(resume_text.encode()).hexdigest()
@@ -296,13 +275,10 @@ def _normalize_sections(secoes) -> list:
 
 # ─── Agent Orchestrator ────────────────────────────────────────────────────────
 
-async def run_agent(image_bytes: bytes, resume_text: str) -> dict:
+async def run_agent(job_description: str, resume_text: str) -> dict:
     t_total = time.monotonic()
 
-    job_description, resume_profile = await asyncio.gather(
-        tool_extract_job(image_bytes),
-        tool_extract_resume_profile(resume_text),
-    )
+    resume_profile = await tool_extract_resume_profile(resume_text)
 
     result = await tool_analyze_compatibility(job_description, resume_profile, resume_text)
 

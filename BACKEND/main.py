@@ -8,6 +8,7 @@ from routes.analyze import router as analyze_router
 from routes.improve import router as improve_router
 from routes.interview import router as interview_router
 from routes.jobs import router as jobs_router
+from routes.related_jobs import router as related_jobs_router
 
 app = FastAPI(title="Resume Analyzer API")
 
@@ -26,6 +27,7 @@ app.include_router(jobs_router, prefix="/api/v1/jobs")
 app.include_router(analyze_router, prefix="/api/v1")
 app.include_router(interview_router, prefix="/api/v1")
 app.include_router(improve_router, prefix="/api/v1")
+app.include_router(related_jobs_router, prefix="/api/v1")
 
 
 @app.get("/health")
