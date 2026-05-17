@@ -64,3 +64,20 @@ class InterviewQuestionsResult(BaseModel):
     titulo_vaga: str
     total_perguntas: int
     perguntas: list[str]
+
+
+class RelatedJob(BaseModel):
+    titulo: str
+    url: str
+    descricao: str
+
+
+class RelatedJobsRequest(BaseModel):
+    titulo_vaga: str
+    habilidades_vaga: list[str] = []
+
+
+class RelatedJobsResult(BaseModel):
+    titulo_vaga: str
+    total: int
+    vagas: list[RelatedJob]
