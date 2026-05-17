@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Box, Container, Paper, Fade, Slide, Typography } from "@mui/material";
+import { Box, Container, Paper, Fade, Slide } from "@mui/material";
 import UploadCard from "./components/UploadCard";
 import JobCard from "./components/JobCard";
 import ResultCard from "./components/ResultCard";
