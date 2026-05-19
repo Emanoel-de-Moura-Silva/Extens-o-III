@@ -1,23 +1,30 @@
-def build_vision_prompt(resume_text: str) -> str:
-    return f"""Você é um especialista em recrutamento e seleção.
-
-Analise a imagem da vaga de emprego fornecida e o currículo abaixo.
-
-CURRÍCULO:
-{resume_text}
-
-Faça duas coisas:
-1. Extraia as informações da vaga na imagem (título, requisitos, experiência necessária)
-2. Analise a compatibilidade entre o currículo e a vaga
-
-Responda SOMENTE com este JSON válido, sem texto adicional:
-{{
-  "titulo_vaga": "<título da vaga extraído da imagem>",
-  "habilidades_vaga": ["<requisito 1>", "<requisito 2>"],
-  "nivel_compatibilidade": <0 a 100>,
-  "pontos_fortes": ["<ponto forte 1>", "<ponto forte 2>"],
-  "pontos_fracos": ["<ponto fraco 1>", "<ponto fraco 2>"],
-  "habilidades_faltantes": ["<skill ausente 1>"],
-  "recomendacao": "<Aprovado para entrevista | Requer desenvolvimento | Não recomendado>",
-  "resumo": "<resumo em 2 frases do perfil do candidato>"
-}}"""
+  
+def build_compatibility_system_prompt() -> str:
+    """System prompt para análise de compatibilidade via messages API."""
+    return (
+        "Você é um recrutador sênior experiente. "
+        "Responda SOMENTE com JSON válido e completo. "
+        "Use APENAS informações presentes nos textos fornecidos. "
+        "NUNCA invente ou suponha informações. "
+        "Se não houver informação suficiente, coloque lista vazia []."
+    )
+ 
+ 
+def build_interview_system_prompt() -> str:
+    """System prompt para geração de perguntas de entrevista."""
+    return (
+        "Você é um especialista em recrutamento e seleção. "
+        "Responda SOMENTE com JSON válido e completo. "
+        "Gere perguntas relevantes baseadas no perfil e na vaga. "
+        "NUNCA repita perguntas. "
+        "As perguntas devem ser em português do Brasil."
+    )
+def build_improvement_system_prompt() -> str:
+    """System prompt para análise e melhoria de currículo."""
+    return (
+        "Você é um especialista em RH e carreira. "
+        "Responda SOMENTE com JSON válido e completo. "
+        "Use APENAS informações presentes no currículo fornecido. "
+        "NUNCA invente ou suponha informações. "
+        "Se não houver informação suficiente, coloque lista vazia []."
+    )
