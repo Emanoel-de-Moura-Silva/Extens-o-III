@@ -13,7 +13,11 @@
       "Bash(curl -s -X POST http://localhost:8000/api/v1/improve -F 'resume_pdf=@C:/Windows/System32/drivers/etc/hosts;type=application/pdf')",
       "Bash(curl *)",
       "Bash(pip install *)",
-      "Bash(python *)"
+      "Bash(python *)",
+      "Bash(../.venv/Scripts/pip install *)",
+      "Bash(../.venv/Scripts/pip uninstall *)",
+      "Bash(dir BACKEND *)",
+      "Bash(dir BACKENDservices *)"
     ]
   },
   "model": "claude-opus-4-7"

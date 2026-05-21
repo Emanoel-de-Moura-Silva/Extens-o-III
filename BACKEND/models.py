@@ -36,7 +36,6 @@ class AnalysisResult(BaseModel):
     habilidades_faltantes: list[str]
     recomendacao: Recomendacao
     resumo: str
-    vagas_relacionadas: list[RelatedJob] = []
 
 
 class SecaoMelhoria(BaseModel):

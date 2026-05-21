@@ -6,7 +6,6 @@ from database import analyses_collection
 from models import AnalysisResult
 from services.agent import run_agent
 from services.pdf import extract_text_from_pdf
-from services.search import search_related_jobs
 
 router = APIRouter()
 
@@ -38,16 +37,6 @@ async def analyze_resume(
         result = await run_agent(job_description, resume_text)
     except ValueError as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-    try:
-        result["vagas_relacionadas"] = await search_related_jobs(
-            result.get("titulo_vaga", ""),
-            result.get("habilidades_vaga", []),
-            limit=5,
-        )
-    except Exception as e:
-        print(f"[Search] Falha ao buscar vagas relacionadas (não crítico): {e}")
-        result["vagas_relacionadas"] = []
 
     try:
         await analyses_collection.insert_one({

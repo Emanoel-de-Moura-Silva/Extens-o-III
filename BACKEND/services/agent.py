@@ -87,26 +87,40 @@ async def tool_analyze_compatibility(
     resume_profile: str,
     resume_text: str,
 ) -> dict:
-    prompt = f"""Você é um recrutador sênior experiente. Analise a compatibilidade entre a vaga e o candidato.
+    prompt = f"""<|begin_of_text|><|start_header_id|>system<|end_header_id|>
+Você é um recrutador sênior. Sua tarefa é avaliar se UM candidato específico atende aos requisitos de UMA vaga específica.
 
-DESCRIÇÃO DA VAGA:
-{job_description}
+REGRAS OBRIGATÓRIAS:
+1. O campo "titulo_vaga" DEVE ser extraído LITERALMENTE do bloco [DESCRIÇÃO DA VAGA] abaixo. NÃO use o cargo do candidato. NÃO invente outra vaga. NÃO recomende outra função.
+2. O campo "habilidades_vaga" DEVE conter APENAS as habilidades/requisitos que aparecem no bloco [DESCRIÇÃO DA VAGA]. NÃO liste habilidades que estão somente no currículo.
+3. Os campos "pontos_fortes", "pontos_fracos" e "habilidades_faltantes" comparam o candidato com a vaga fornecida — nunca com outra vaga.
+4. Responda SEMPRE em português do Brasil, em JSON válido, sem texto fora do JSON.
+<|eot_id|><|start_header_id|>user<|end_header_id|>
 
-PERFIL DO CANDIDATO (resumido):
+[DESCRIÇÃO DA VAGA]
+{_truncate(job_description, 4000)}
+[FIM DA DESCRIÇÃO DA VAGA]
+
+[PERFIL DO CANDIDATO — resumo extraído do currículo]
 {resume_profile}
+[FIM DO PERFIL]
 
-CURRÍCULO COMPLETO (trecho):
+[TRECHO DO CURRÍCULO COMPLETO]
 {_truncate(resume_text, 2000)}
+[FIM DO CURRÍCULO]
 
-Retorne um objeto JSON com EXATAMENTE estes campos em português:
-- "titulo_vaga": nome do cargo da vaga (string)
-- "habilidades_vaga": lista de habilidades exigidas pela vaga (lista de strings)
-- "nivel_compatibilidade": porcentagem de compatibilidade de 0 a 100 (número inteiro)
-- "pontos_fortes": lista de pontos positivos do candidato para esta vaga (lista de strings)
-- "pontos_fracos": lista de pontos negativos ou lacunas do candidato (lista de strings)
-- "habilidades_faltantes": habilidades da vaga que o candidato não possui (lista de strings)
-- "recomendacao": exatamente uma das três opções: "Aprovado para entrevista", "Requer desenvolvimento" ou "Não recomendado"
-- "resumo": análise geral em 2 frases curtas (string)"""
+Avalie a compatibilidade do candidato acima EXCLUSIVAMENTE com a vaga descrita no bloco [DESCRIÇÃO DA VAGA].
+
+Retorne um único objeto JSON com EXATAMENTE estes campos:
+- "titulo_vaga": (string) cargo extraído LITERALMENTE de [DESCRIÇÃO DA VAGA]
+- "habilidades_vaga": (lista de strings) habilidades/requisitos listados em [DESCRIÇÃO DA VAGA]
+- "nivel_compatibilidade": (inteiro 0-100) o quanto o candidato atende à vaga
+- "pontos_fortes": (lista de strings) pontos do candidato que atendem à vaga
+- "pontos_fracos": (lista de strings) lacunas do candidato em relação à vaga
+- "habilidades_faltantes": (lista de strings) habilidades da vaga ausentes no currículo
+- "recomendacao": (string) uma das opções: "Aprovado para entrevista", "Requer desenvolvimento" ou "Não recomendado"
+- "resumo": (string) 2 frases curtas avaliando o candidato PARA ESTA VAGA
+<|eot_id|><|start_header_id|>assistant<|end_header_id|>"""
 
     for attempt in range(3):
         t = time.monotonic()
