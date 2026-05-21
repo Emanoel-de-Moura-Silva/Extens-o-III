@@ -228,3 +228,7 @@ Backend/IA:
 * geração de perguntas de entrevista;
 * feedback textual personalizado;
 * plano de treino do candidato.
+
+## Documentação de reuniões
+  * Trello : https://trello.com/invite/b/69f63fcf6520d5d9587b4ea3/ATTIc5e469a8cf53b2668568bddc40735799C93A7AD2/extensao-3
+  * Sheets : https://docs.google.com/spreadsheets/d/1qG1PVusJjrarHl880kbnHyd6oDPCnAdaz7nyBqV7Qng/edit?usp=sharing
