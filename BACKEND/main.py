@@ -12,9 +12,6 @@ from routes.related_jobs import router as related_jobs_router
 
 app = FastAPI(title="Resume Analyzer API")
 
-origins = os.getenv("ALLOWED_ORIGINS", "").split(",")
-origins = [origin for origin in origins if origin]
-
 origins = os.getenv("ORIGINS")
 app.add_middleware(
     CORSMiddleware,
