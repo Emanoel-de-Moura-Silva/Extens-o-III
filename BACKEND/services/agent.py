@@ -1,17 +1,29 @@
+import asyncio
+import base64
 import hashlib
 import json
 import re
 import time
+import os
 
-import httpx
+from groq import Groq, RateLimitError
 from fastapi import HTTPException
+from .prompt import (
+    build_compatibility_system_prompt,
+    build_improvement_system_prompt,
+)
 
-OLLAMA_URL = "http://localhost:11434/api/generate"
-ANALYSIS_MODEL = "llama3.2"
+# ─── Modelos ──────────────────────────────────────────────────────────────────
+
+ANALYSIS_MODEL = "llama-3.3-70b-versatile"
+VISION_MODEL   = "meta-llama/llama-4-maverick-17b-128e-instruct-fp8"
+
+_groq = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
+# ─── Cache de currículos ──────────────────────────────────────────────────────
 
 _resume_cache: dict[str, str] = {}
 _MAX_CACHE = 200
-
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -33,34 +45,91 @@ def _cache_set(key: str, value: str):
     _resume_cache[key] = value
 
 
-async def _call_ollama(payload: dict) -> str:
-    try:
-        async with httpx.AsyncClient(timeout=120.0) as client:
-            resp = await client.post(OLLAMA_URL, json=payload)
-            resp.raise_for_status()
-        return resp.json()["response"]
-    except httpx.ConnectError:
-        raise HTTPException(status_code=503, detail="Ollama indisponível. Verifique se o serviço está rodando.")
-    except httpx.TimeoutException:
-        raise HTTPException(status_code=504, detail="Timeout na geração de resposta pelo modelo.")
-    except KeyError:
-        raise ValueError("Resposta inesperada do Ollama: campo 'response' ausente.")
+# ─── Cliente Groq (substitui _call_ollama) ────────────────────────────────────
+
+async def _call_groq(
+    messages: list,
+    model: str = ANALYSIS_MODEL,
+    json_mode: bool = False,
+    temperature: float = 0.1,
+    max_tokens: int = 1024,
+) -> str:
+    kwargs = dict(
+        model=model,
+        messages=messages,
+        max_tokens=max_tokens,
+        temperature=temperature,
+    )
+    if json_mode:
+        kwargs["response_format"] = {"type": "json_object"}
+
+    for attempt in range(3):
+        try:
+            loop = asyncio.get_event_loop()
+            resp = await loop.run_in_executor(
+                None,
+                lambda: _groq.chat.completions.create(**kwargs)
+            )
+            return resp.choices[0].message.content
+        except RateLimitError:
+            wait = 2 ** attempt  # 1s, 2s, 4s
+            print(f"[AGENTE] Rate limit atingido, aguardando {wait}s...")
+            await asyncio.sleep(wait)
+        except Exception as e:
+            raise HTTPException(status_code=503, detail=f"Erro ao chamar Groq: {str(e)}")
+
+    raise HTTPException(status_code=429, detail="Limite de requisições atingido. Tente em instantes.")
 
 
 # ─── Tools ────────────────────────────────────────────────────────────────────
 
+async def tool_extract_job(image_bytes: bytes) -> str:
+    """Extrai informações da vaga a partir de uma imagem."""
+    t = time.monotonic()
+    image_b64 = base64.b64encode(image_bytes).decode("utf-8")
+
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/jpeg;base64,{image_b64}"}
+                },
+                {
+                    "type": "text",
+                    "text": (
+                        "Você está analisando uma imagem de vaga de emprego. "
+                        "Extraia e liste em detalhes: título do cargo, habilidades técnicas exigidas, "
+                        "nível de experiência requerido (anos) e principais responsabilidades. "
+                        "Responda em português do Brasil."
+                    )
+                }
+            ]
+        }
+    ]
+
+    result = await _call_groq(messages, model=VISION_MODEL, temperature=0.1, max_tokens=1024)
+    _log("tool_extract_job", time.monotonic() - t)
+    return result
+
+
 async def tool_extract_resume_profile(resume_text: str) -> str:
+    """Extrai perfil resumido do currículo. Usa cache para evitar chamadas repetidas."""
     resume_hash = hashlib.md5(resume_text.encode()).hexdigest()
     if resume_hash in _resume_cache:
         print("[AGENTE] tool_extract_resume_profile: cache hit")
         return _resume_cache[resume_hash]
 
     t = time.monotonic()
-    prompt = f"""<|begin_of_text|><|start_header_id|>system<|end_header_id|>
-Você é um especialista em análise de currículos. Responda sempre em português do Brasil.
-<|eot_id|><|start_header_id|>user<|end_header_id|>
-
-CURRÍCULO:
+    messages = [
+        {
+            "role": "system",
+            "content": "Você é um especialista em análise de currículos. Responda sempre em português do Brasil."
+        },
+        {
+            "role": "user",
+            "content": f"""CURRÍCULO:
 {_truncate(resume_text, 3000)}
 
 Extraia e liste de forma objetiva:
@@ -68,15 +137,11 @@ Extraia e liste de forma objetiva:
 - Habilidades técnicas principais (máximo 10 itens)
 - Total de anos de experiência profissional
 - Nível de formação acadêmica
-- Idiomas (se mencionado)
-<|eot_id|><|start_header_id|>assistant<|end_header_id|>"""
+- Idiomas (se mencionado)"""
+        }
+    ]
 
-    profile = await _call_ollama({
-        "model": ANALYSIS_MODEL,
-        "prompt": prompt,
-        "stream": False,
-        "options": {"temperature": 0.1, "num_predict": 512},
-    })
+    profile = await _call_groq(messages, temperature=0.1, max_tokens=512)
     _cache_set(resume_hash, profile)
     _log("tool_extract_resume_profile", time.monotonic() - t)
     return profile
@@ -87,7 +152,15 @@ async def tool_analyze_compatibility(
     resume_profile: str,
     resume_text: str,
 ) -> dict:
-    prompt = f"""Você é um recrutador sênior experiente. Analise a compatibilidade entre a vaga e o candidato.
+    """Analisa compatibilidade entre vaga e candidato. Retorna dict normalizado."""
+    messages = [
+        {
+            "role": "system",
+            "content": build_compatibility_system_prompt()
+        },
+        {
+            "role": "user",
+            "content": f"""Analise a compatibilidade entre a vaga e o candidato.
 
 DESCRIÇÃO DA VAGA:
 {job_description}
@@ -107,19 +180,17 @@ Retorne um objeto JSON com EXATAMENTE estes campos em português:
 - "habilidades_faltantes": habilidades da vaga que o candidato não possui (lista de strings)
 - "recomendacao": exatamente uma das três opções: "Aprovado para entrevista", "Requer desenvolvimento" ou "Não recomendado"
 - "resumo": análise geral em 2 frases curtas (string)"""
+        }
+    ]
 
     for attempt in range(3):
         t = time.monotonic()
-        raw = await _call_ollama({
-            "model": ANALYSIS_MODEL,
-            "prompt": prompt,
-            "format": "json",
-            "stream": False,
-            "options": {
-                "temperature": round(0.1 + attempt * 0.05, 2),
-                "num_predict": 1024,
-            },
-        })
+        raw = await _call_groq(
+            messages,
+            json_mode=True,
+            temperature=round(0.1 + attempt * 0.05, 2),
+            max_tokens=1024,
+        )
         _log(f"tool_analyze_compatibility (tentativa {attempt + 1})", time.monotonic() - t)
         print(f"[AGENTE] resposta bruta:", raw[:400])
 
@@ -173,9 +244,9 @@ def _normalize_and_coerce(data: dict) -> dict:
         normalized[field] = value if value is not None else defaults[field]
 
     normalized["nivel_compatibilidade"] = _to_int(normalized["nivel_compatibilidade"])
-    normalized["titulo_vaga"] = str(normalized["titulo_vaga"])
+    normalized["titulo_vaga"]  = str(normalized["titulo_vaga"])
     normalized["recomendacao"] = str(normalized["recomendacao"])
-    normalized["resumo"] = str(normalized["resumo"])
+    normalized["resumo"]       = str(normalized["resumo"])
     for list_field in ["habilidades_vaga", "pontos_fortes", "pontos_fracos", "habilidades_faltantes"]:
         normalized[list_field] = _to_list(normalized[list_field])
 
@@ -201,7 +272,15 @@ def _to_list(value) -> list:
 # ─── Improvement Tool ─────────────────────────────────────────────────────────
 
 async def tool_improve_resume(resume_text: str) -> dict:
-    prompt = f"""Você é um especialista em RH e carreira. Analise o currículo abaixo e retorne sugestões de melhoria detalhadas.
+    """Analisa o currículo e retorna sugestões de melhoria detalhadas."""
+    messages = [
+        {
+            "role": "system",
+            "content": build_improvement_system_prompt()
+        },
+        {
+            "role": "user",
+            "content": f"""Analise o currículo abaixo e retorne sugestões de melhoria detalhadas.
 
 CURRÍCULO:
 {_truncate(resume_text, 4000)}
@@ -213,22 +292,20 @@ Retorne um objeto JSON com EXATAMENTE estes campos em português:
     - "secao": nome da seção analisada (ex: "Objetivo", "Experiência", "Habilidades", "Educação", "Formatação")
     - "problemas": lista de problemas encontrados nessa seção (lista de strings)
     - "sugestoes": lista de sugestões concretas para melhorar essa seção (lista de strings)
-- "habilidades_recomendadas": lista de habilidades relevantes que o candidato deveria adicionar ao currículo (lista de strings)
+- "habilidades_recomendadas": lista de habilidades relevantes que o candidato deveria adicionar (lista de strings)
 - "palavras_chave_faltantes": lista de palavras-chave importantes para o mercado que estão ausentes (lista de strings)
 - "acoes_prioritarias": lista de 3 a 5 ações prioritárias mais importantes a tomar imediatamente (lista de strings)"""
+        }
+    ]
 
     for attempt in range(3):
         t = time.monotonic()
-        raw = await _call_ollama({
-            "model": ANALYSIS_MODEL,
-            "prompt": prompt,
-            "format": "json",
-            "stream": False,
-            "options": {
-                "temperature": round(0.1 + attempt * 0.05, 2),
-                "num_predict": 2048,
-            },
-        })
+        raw = await _call_groq(
+            messages,
+            json_mode=True,
+            temperature=round(0.1 + attempt * 0.05, 2),
+            max_tokens=2048,
+        )
         _log(f"tool_improve_resume (tentativa {attempt + 1})", time.monotonic() - t)
         print(f"[AGENTE] resposta bruta:", raw[:400])
 
@@ -249,12 +326,12 @@ Retorne um objeto JSON com EXATAMENTE estes campos em português:
 
 def _normalize_improvement(data: dict) -> dict:
     return {
-        "pontuacao_geral": _to_int(data.get("pontuacao_geral", 0)),
-        "resumo_diagnostico": str(data.get("resumo_diagnostico", data.get("summary", ""))),
-        "melhorias_por_secao": _normalize_sections(data.get("melhorias_por_secao", data.get("sections", []))),
+        "pontuacao_geral":        _to_int(data.get("pontuacao_geral", 0)),
+        "resumo_diagnostico":     str(data.get("resumo_diagnostico", data.get("summary", ""))),
+        "melhorias_por_secao":    _normalize_sections(data.get("melhorias_por_secao", data.get("sections", []))),
         "habilidades_recomendadas": _to_list(data.get("habilidades_recomendadas", data.get("recommended_skills", []))),
         "palavras_chave_faltantes": _to_list(data.get("palavras_chave_faltantes", data.get("missing_keywords", []))),
-        "acoes_prioritarias": _to_list(data.get("acoes_prioritarias", data.get("priority_actions", []))),
+        "acoes_prioritarias":     _to_list(data.get("acoes_prioritarias", data.get("priority_actions", []))),
     }
 
 
@@ -266,7 +343,7 @@ def _normalize_sections(secoes) -> list:
         if not isinstance(item, dict):
             continue
         normalized.append({
-            "secao": str(item.get("secao", item.get("section", ""))),
+            "secao":     str(item.get("secao", item.get("section", ""))),
             "problemas": _to_list(item.get("problemas", item.get("problems", []))),
             "sugestoes": _to_list(item.get("sugestoes", item.get("suggestions", []))),
         })
@@ -275,12 +352,29 @@ def _normalize_sections(secoes) -> list:
 
 # ─── Agent Orchestrator ────────────────────────────────────────────────────────
 
-async def run_agent(job_description: str, resume_text: str) -> dict:
+async def run_agent(image_bytes: bytes, resume_text: str) -> dict:
+    """Orquestra as tools com imagem da vaga + currículo."""
     t_total = time.monotonic()
 
-    resume_profile = await tool_extract_resume_profile(resume_text)
+    job_description, resume_profile = await asyncio.gather(
+        tool_extract_job(image_bytes),
+        tool_extract_resume_profile(resume_text),
+    )
 
     result = await tool_analyze_compatibility(job_description, resume_profile, resume_text)
 
     _log("run_agent TOTAL", time.monotonic() - t_total)
+    return result
+
+
+async def run_agent_from_text(job_description: str, resume_text: str) -> dict:
+    """Orquestra as tools com descrição textual da vaga + currículo.
+    Usado pela rota /analyze que recebe job_description como Form field.
+    """
+    t_total = time.monotonic()
+
+    resume_profile = await tool_extract_resume_profile(resume_text)
+    result = await tool_analyze_compatibility(job_description, resume_profile, resume_text)
+
+    _log("run_agent_from_text TOTAL", time.monotonic() - t_total)
     return result

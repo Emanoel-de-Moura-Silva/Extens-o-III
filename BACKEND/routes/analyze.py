@@ -1,17 +1,19 @@
 from datetime import datetime
-
+ 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
-
+ 
 from database import analyses_collection
 from models import AnalysisResult
-from services.agent import run_agent
 from services.pdf import extract_text_from_pdf
-
+from services.agent import run_agent, run_agent_from_text
+ 
 router = APIRouter()
-
+ 
 _MAX_FILE_SIZE = 20 * 1024 * 1024  # 20 MB
-
-
+ 
+ 
+# ─── Rota principal: descrição textual da vaga ────────────────────────────────
+ 
 @router.post("/analyze", response_model=AnalysisResult)
 async def analyze_resume(
     job_description: str = Form(..., description="Descrição textual da vaga"),
@@ -19,34 +21,26 @@ async def analyze_resume(
 ):
     if not job_description.strip():
         raise HTTPException(status_code=400, detail="job_description não pode ser vazio")
-
+ 
     if resume_pdf.content_type != "application/pdf":
         raise HTTPException(status_code=400, detail="resume_pdf deve ser um PDF")
-
+ 
     if resume_pdf.size and resume_pdf.size > _MAX_FILE_SIZE:
         raise HTTPException(status_code=413, detail="resume_pdf muito grande (máx 20 MB)")
-
+ 
     pdf_bytes = await resume_pdf.read()
-
+ 
     try:
         resume_text = await extract_text_from_pdf(pdf_bytes)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-
+ 
     try:
-        result = await run_agent(job_description, resume_text)
+        # run_agent_from_text: recebe texto da vaga direto, sem imagem
+        result = await run_agent_from_text(job_description, resume_text)
     except ValueError as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-    try:
-        await analyses_collection.insert_one({
-            "titulo_vaga": result.get("titulo_vaga"),
-            "resume_filename": resume_pdf.filename,
-            "resultado": result,
-            "modelo_usado": "llama3.2 (agente)",
-            "created_at": datetime.utcnow(),
-        })
-    except Exception as e:
-        print(f"[MongoDB] Falha ao salvar análise (não crítico): {e}")
-
+ 
     return AnalysisResult(**result)
+ 

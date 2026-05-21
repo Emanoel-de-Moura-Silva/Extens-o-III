@@ -1,152 +1,71 @@
 import json
 import re
 import base64
-import httpx
+import os
 
-from services.agent import OLLAMA_URL, _call_ollama
+from groq import Groq
+from .prompt import build_interview_system_prompt
 
-VISION_MODEL = "moondream"
-ANALYSIS_MODEL = "llama3.2"
+# ─── Cliente ──────────────────────────────────────────────────────────────────
+
+ANALYSIS_MODEL = "llama-3.3-70b-versatile"
+VISION_MODEL   = "meta-llama/llama-4-maverick-17b-128e-instruct-fp8"
+
+_groq = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 
-##-------------------- FEEDBACK DO CURRICULO --------------------##
+def _chat(messages: list, model: str = ANALYSIS_MODEL, json_mode: bool = False, max_tokens: int = 2048) -> str:
+    """Wrapper síncrono para o Groq — usado pelas funções async via agent._call_groq."""
+    kwargs = dict(model=model, messages=messages, max_tokens=max_tokens, temperature=0.1)
+    if json_mode:
+        kwargs["response_format"] = {"type": "json_object"}
+    resp = _groq.chat.completions.create(**kwargs)
+    return resp.choices[0].message.content
+
+
+# ─── Helpers ──────────────────────────────────────────────────────────────────
+
 def image_to_base64(image_bytes: bytes) -> str:
     return base64.b64encode(image_bytes).decode("utf-8")
 
+
+# ─── Extração de vaga (visão) ─────────────────────────────────────────────────
+
 async def extract_job_from_image(image_bytes: bytes) -> str:
-    image_b64 = image_to_base64(image_bytes)
+    """Extrai texto da imagem da vaga usando modelo multimodal do Groq."""
+    from services.agent import tool_extract_job  # evita import circular
+    return await tool_extract_job(image_bytes)
 
 
-    async with httpx.AsyncClient(timeout=240.0) as client:
-        response = await client.post(
-            OLLAMA_URL,
-            json={
-                "model": VISION_MODEL,
-                "prompt": "List exactly what is written in this job posting image. Copy the exact text you see: job title, requirements, skills, and experience needed. Do not add or interpret anything.",
-                "images": [image_b64],
-                "stream": False,
-                "options": {
-                    "temperature": 0.0,
-                    "seed": 42
-                }
-            }
-        )
-        response.raise_for_status()
-
-    job_description = response.json()["response"]
-
-    job_description = await _call_ollama({
-        "model": VISION_MODEL,
-        "prompt": "List exactly what is written in this job posting image. Copy the exact text you see: job title, requirements, skills, and experience needed. Do not add or interpret anything.",
-        "images": [image_b64],
-        "stream": False,
-        "options": {
-            "temperature": 0.0,
-            "seed": 42
-        }
-    })
-
-    print("VAGA EXTRAÍDA:", job_description)
-    return job_description
-
+# ─── Análise de compatibilidade ───────────────────────────────────────────────
 
 async def analyze_compatibility(job_description: str, resume_text: str) -> dict:
-    prompt = f"""<|begin_of_text|><|start_header_id|>system<|end_header_id|>
-Você é um especialista em recrutamento.
-Regras obrigatórias:
-- Responda SOMENTE com JSON válido e completo
-- Use APENAS informações presentes nos textos fornecidos
-- NUNCA invente ou suponha informações
-- Se não houver informação suficiente, coloque lista vazia []
-- SEMPRE feche o JSON corretamente com }}
-<|eot_id|><|start_header_id|>user<|end_header_id|>
-
-DESCRIÇÃO DA VAGA:
-{job_description}
-
-CURRÍCULO DO CANDIDATO:
-{resume_text}
-
-Retorne este JSON completo e fechado:
-{{
-  "titulo_vaga": "<título exato da vaga>",
-  "habilidades_vaga": ["<habilidade 1>", "<habilidade 2>"],
-  "nivel_compatibilidade": <0 a 100>,
-  "pontos_fortes": ["<ponto 1>", "<ponto 2>"],
-  "pontos_fracos": ["<ponto 1>", "<ponto 2>"],
-  "habilidades_faltantes": ["<skill 1>"],
-  "recomendacao": "<Aprovado para entrevista | Requer desenvolvimento | Não recomendado>",
-  "resumo": "<resumo curto em 1 frase>"
-}}
-<|eot_id|><|start_header_id|>assistant<|end_header_id|>"""
+    """Analisa compatibilidade entre vaga e currículo."""
+    from services.agent import tool_analyze_compatibility, tool_extract_resume_profile
+    resume_profile = await tool_extract_resume_profile(resume_text)
+    return await tool_analyze_compatibility(job_description, resume_profile, resume_text)
 
 
-    async with httpx.AsyncClient(timeout=240.0) as client:
-        response = await client.post(
-            OLLAMA_URL,
-            json={
-                "model": ANALYSIS_MODEL,
-                "prompt": prompt,
-                "stream": False,
-                "options": {
-                    "temperature": 0.0,
-                    "seed": 42,
-                    "num_predict": 2048
-                }
-            }
-        )
-        response.raise_for_status()
-
-    raw_text = response.json()["response"]
-
-    raw_text = await _call_ollama({
-        "model": ANALYSIS_MODEL,
-        "prompt": prompt,
-        "stream": False,
-        "options": {
-            "temperature": 0.0,
-            "seed": 42,
-            "num_predict": 2048
-        }
-    })
-
-    print("RESPOSTA LLAMA:", raw_text)
-
-    raw_text = raw_text.strip()
-    if not raw_text.endswith("}"):
-        raw_text += "}"
-
-    json_match = re.search(r'\{.*\}', raw_text, re.DOTALL)
-    if not json_match:
-        raise ValueError(f"Modelo não retornou JSON válido: {raw_text}")
-
-    try:
-        return json.loads(json_match.group())
-    except json.JSONDecodeError:
-        fixed = re.sub(r'("resumo":\s*"[^"]*?)(\s*$)', r'\1"}', raw_text)
-        json_match = re.search(r'\{.*\}', fixed, re.DOTALL)
-        if json_match:
-            return json.loads(json_match.group())
-        raise ValueError(f"Não foi possível corrigir o JSON: {raw_text}")
-
-
-async def analyze_with_vision(prompt: str, image_bytes: bytes) -> dict:
+async def analyze_with_vision(resume_text: str, image_bytes: bytes) -> dict:
+    """Pipeline completo: extrai vaga da imagem e analisa compatibilidade."""
     job_description = await extract_job_from_image(image_bytes)
-    return await analyze_compatibility(job_description, prompt)
+    return await analyze_compatibility(job_description, resume_text)
 
 
-##-------------------- SIMULAÇÃO DE ENTREVISTA (10 PERGUNTAS) -------------------##
+# ─── Geração de perguntas de entrevista ───────────────────────────────────────
+
 async def generate_interview_questions(analysis_result: dict) -> list[str]:
-    prompt = f"""<|begin_of_text|><|start_header_id|>system<|end_header_id|>
-Você é um especialista em recrutamento e seleção.
-Regras obrigatórias:
-- Responda SOMENTE com JSON válido e completo
-- Gere perguntas relevantes baseadas no perfil e na vaga
-- NUNCA repita perguntas
-- As perguntas devem ser em português
-<|eot_id|><|start_header_id|>user<|end_header_id|>
+    """Gera 10 perguntas de entrevista com base na análise de compatibilidade."""
+    import asyncio
 
-Com base nessa análise de compatibilidade:
+    messages = [
+        {
+            "role": "system",
+            "content": build_interview_system_prompt()
+        },
+        {
+            "role": "user",
+            "content": f"""Com base nessa análise de compatibilidade:
 
 VAGA: {analysis_result.get('titulo_vaga')}
 HABILIDADES DA VAGA: {', '.join(analysis_result.get('habilidades_vaga', []))}
@@ -172,54 +91,22 @@ Retorne SOMENTE este JSON:
     "<pergunta 9>",
     "<pergunta 10>"
   ]
-}}
-<|eot_id|><|start_header_id|>assistant<|end_header_id|>"""
-
-    async with httpx.AsyncClient(timeout=240.0) as client:
-        response = await client.post(
-            OLLAMA_URL,
-            json={
-                "model": ANALYSIS_MODEL,
-                "prompt": prompt,
-                "stream": False,
-                "options": {
-                    "temperature": 0.3,
-                    "seed": 42,
-                    "num_predict": 2048
-                }
-            }
-        )
-        response.raise_for_status()
-
-    response_json = response.json()
-    print("RESPOSTA COMPLETA OLLAMA:", response_json)
-
-    if "message" in response_json:
-        raw_text = response_json["message"]["content"]
-    elif "response" in response_json:
-        raw_text = response_json["response"]
-    else:
-        raise ValueError(f"Formato de resposta inesperado: {response_json}")
-
-    raw_text = await _call_ollama({
-        "model": ANALYSIS_MODEL,
-        "prompt": prompt,
-        "stream": False,
-        "options": {
-            "temperature": 0.3,
-            "seed": 42,
-            "num_predict": 2048
+}}"""
         }
-    })
-    print("PERGUNTAS GERADAS:", raw_text)
+    ]
 
-    raw_text = raw_text.strip()
-    if not raw_text.endswith("}"):
-        raw_text += "}"
+    loop = asyncio.get_event_loop()
+    raw = await loop.run_in_executor(
+        None,
+        lambda: _chat(messages, json_mode=True, max_tokens=2048)
+    )
 
-    json_match = re.search(r'\{.*\}', raw_text, re.DOTALL)
+    print("PERGUNTAS GERADAS:", raw[:300])
+
+    raw = raw.strip()
+    json_match = re.search(r'\{.*\}', raw, re.DOTALL)
     if not json_match:
-        raise ValueError(f"Modelo não retornou JSON válido: {raw_text}")
+        raise ValueError(f"Modelo não retornou JSON válido: {raw}")
 
     result = json.loads(json_match.group())
     return result.get("perguntas", [])

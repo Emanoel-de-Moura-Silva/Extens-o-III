@@ -3,7 +3,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from database import client as mongo_client, db
+#from database import client as mongo_client, db
 from routes.analyze import router as analyze_router
 from routes.improve import router as improve_router
 from routes.interview import router as interview_router
@@ -15,6 +15,7 @@ app = FastAPI(title="Resume Analyzer API")
 origins = os.getenv("ALLOWED_ORIGINS", "").split(",")
 origins = [origin for origin in origins if origin]
 
+origins = os.getenv("ORIGINS")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -29,7 +30,7 @@ app.include_router(interview_router, prefix="/api/v1")
 app.include_router(improve_router, prefix="/api/v1")
 app.include_router(related_jobs_router, prefix="/api/v1")
 
-
+'''
 @app.get("/health")
 async def health():
     try:
@@ -42,4 +43,4 @@ async def health():
 
 @app.on_event("shutdown")
 async def shutdown():
-    mongo_client.close()
+    mongo_client.close()'''
