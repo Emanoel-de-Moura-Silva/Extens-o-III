@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
-import { Box, Container, Paper, Fade, Slide } from "@mui/material";
+import { Box, Button, Container, Paper, Fade, Slide } from "@mui/material";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import UploadCard from "./components/UploadCard";
 import JobCard from "./components/JobCard";
 import ResultCard from "./components/ResultCard";
@@ -167,6 +168,16 @@ ${resultado.recomendacao}
         handleAnalisar(texto);
     };
 
+    const handleVoltarInicio = () => {
+        setMostrarResultado(false);
+        setMostrarCards(true);
+        setResultado(null);
+        setRespostaExtraTitulo("");
+        setRespostaExtraItems([]);
+        setImproveResponse(null);
+        setErro("");
+    };
+
     return (
         <Box sx={{ minHeight: "100vh", backgroundColor: "background.default", py: 6 }}>
             <Container
@@ -251,6 +262,28 @@ ${resultado.recomendacao}
                                 gap: 1,
                             }}
                         >
+                            <Box
+                                sx={{
+                                    display: "flex",
+                                    justifyContent: "flex-start",
+                                    mb: 1,
+                                }}
+                            >
+                                <Button
+                                    variant="outlined"
+                                    startIcon={<ArrowBackIcon />}
+                                    onClick={handleVoltarInicio}
+                                    sx={{
+                                        borderRadius: 999,
+                                        textTransform: "none",
+                                        fontWeight: 700,
+                                        px: 2.5,
+                                    }}
+                                >
+                                    Voltar
+                                </Button>
+                            </Box>
+
                             {resultado && <ResultCard resultado={resultado} />}
 
                             <Box ref={respostaExtraRef}>
@@ -269,6 +302,7 @@ ${resultado.recomendacao}
                             <ChatBar
                                 visible={!!resultado}
                                 disabled={isLoading}
+                                nivelCompatibilidade={resultado?.nivel_compatibilidade}
                                 onSelectScenario={handleSelectScenario}
                             />
                         </Box>

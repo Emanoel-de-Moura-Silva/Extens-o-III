@@ -6,14 +6,26 @@ type ChatBarProps = {
     onSelectScenario: (scenario: ScenarioType) => void;
     disabled?: boolean;
     visible?: boolean;
+    nivelCompatibilidade?: number;
 };
 
 function ChatBar({
     onSelectScenario,
     disabled = false,
     visible = true,
+    nivelCompatibilidade,
 }: ChatBarProps) {
     if (!visible) return null;
+
+    const compatibilidadeMinimaParaEntrevista = 50;
+
+    const podeSimularEntrevista =
+        nivelCompatibilidade === undefined ||
+        nivelCompatibilidade >= compatibilidadeMinimaParaEntrevista;
+
+    const podeMelhorar =
+        nivelCompatibilidade === undefined ||
+        nivelCompatibilidade < 100;
 
     return (
         <Paper
@@ -34,19 +46,23 @@ function ChatBar({
                     flexWrap: "wrap",
                 }}
             >
-                <Chip
-                    label="Simular perguntas"
-                    clickable
-                    disabled={disabled}
-                    onClick={() => onSelectScenario("interview")}
-                />
+                {podeSimularEntrevista && (
+                    <Chip
+                        label="Simular perguntas"
+                        clickable
+                        disabled={disabled}
+                        onClick={() => onSelectScenario("interview")}
+                    />
+                )}
 
-                <Chip
-                    label="Como melhorar"
-                    clickable
-                    disabled={disabled}
-                    onClick={() => onSelectScenario("improve")}
-                />
+                {podeMelhorar && (
+                    <Chip
+                        label="Como melhorar"
+                        clickable
+                        disabled={disabled}
+                        onClick={() => onSelectScenario("improve")}
+                    />
+                )}
             </Box>
         </Paper>
     );
