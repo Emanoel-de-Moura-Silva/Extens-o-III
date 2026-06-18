@@ -17,6 +17,6 @@ else:
     client = None
     db     = None
 
-jobs_collection     = db["jobs"]      if db else None
-resumes_collection  = db["resumes"]   if db else None
-analyses_collection = db["analyses"]  if db else None
+jobs_collection     = db["jobs"]     if db is not None else None
+resumes_collection  = db["resumes"]   if db is not None else None
+analyses_collection = db["analyses"]  if db is not None else None

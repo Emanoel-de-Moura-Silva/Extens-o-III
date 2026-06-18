@@ -6,14 +6,50 @@ type ChatBarProps = {
     onSelectScenario: (scenario: ScenarioType) => void;
     disabled?: boolean;
     visible?: boolean;
+    nivelCompatibilidade?: number;
+    loadingScenario?: ScenarioType | null;
+    selectedScenarios?: ScenarioType[];
 };
 
 function ChatBar({
     onSelectScenario,
     disabled = false,
     visible = true,
+    nivelCompatibilidade,
+    loadingScenario = null,
+    selectedScenarios = [],
 }: ChatBarProps) {
     if (!visible) return null;
+
+    const compatibilidadeMinimaParaEntrevista = 50;
+
+    const podeSimularEntrevista =
+        nivelCompatibilidade === undefined ||
+        nivelCompatibilidade >= compatibilidadeMinimaParaEntrevista;
+
+    const podeMelhorar =
+        nivelCompatibilidade === undefined ||
+        nivelCompatibilidade < 100;
+
+    const isScenarioDisabled = (scenario: ScenarioType) =>
+        disabled ||
+        loadingScenario === scenario ||
+        selectedScenarios.includes(scenario);
+
+    const getScenarioLabel = (
+        scenario: ScenarioType,
+        defaultLabel: string
+    ) => {
+        if (loadingScenario === scenario) {
+            return "Carregando...";
+        }
+
+        if (selectedScenarios.includes(scenario)) {
+            return `${defaultLabel} gerado`;
+        }
+
+        return defaultLabel;
+    };
 
     return (
         <Paper
@@ -34,19 +70,29 @@ function ChatBar({
                     flexWrap: "wrap",
                 }}
             >
-                <Chip
-                    label="Simular perguntas"
-                    clickable
-                    disabled={disabled}
-                    onClick={() => onSelectScenario("interview")}
-                />
+                {podeSimularEntrevista && (
+                    <Chip
+                        label={getScenarioLabel(
+                            "interview",
+                            "Simular perguntas"
+                        )}
+                        clickable
+                        disabled={isScenarioDisabled("interview")}
+                        onClick={() => onSelectScenario("interview")}
+                    />
+                )}
 
-                <Chip
-                    label="Como melhorar"
-                    clickable
-                    disabled={disabled}
-                    onClick={() => onSelectScenario("improve")}
-                />
+                {podeMelhorar && (
+                    <Chip
+                        label={getScenarioLabel(
+                            "improve",
+                            "Como melhorar"
+                        )}
+                        clickable
+                        disabled={isScenarioDisabled("improve")}
+                        onClick={() => onSelectScenario("improve")}
+                    />
+                )}
             </Box>
         </Paper>
     );
