@@ -232,3 +232,182 @@ Backend/IA:
 ## Documentação de reuniões
   * Trello : https://trello.com/invite/b/69f63fcf6520d5d9587b4ea3/ATTIc5e469a8cf53b2668568bddc40735799C93A7AD2/extensao-3
   * Sheets : https://docs.google.com/spreadsheets/d/1qG1PVusJjrarHl880kbnHyd6oDPCnAdaz7nyBqV7Qng/edit?usp=sharing
+
+
+# Como Executar a Aplicação (Back-end)
+
+## Pré-requisitos
+
+Antes de iniciar o projeto, certifique-se de ter instalado:
+
+* Python 3.10 ou superior
+* Pip (gerenciador de pacotes do Python)
+
+## 1. Clonar o Projeto
+
+```bash
+git clone <url-do-repositorio>
+cd <nome-do-projeto>
+cd BACKEND
+```
+
+## 2. Criar e Ativar um Ambiente Virtual
+
+### Windows
+
+```bash
+python -m venv venv
+venv/Scripts/activate
+```
+
+### Linux/Mac
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+## 3. Instalar as Dependências
+
+Instale todas as bibliotecas necessárias:
+
+```bash
+pip install -r requirements.txt
+```
+
+## 4. Configurar as Variáveis de Ambiente
+
+Crie um arquivo `.env` na raiz do projeto e adicione:
+
+```env
+GROQ_API_KEY=sua_chave_groq
+```
+
+### Obtendo a chave da Groq
+
+1. Acesse o console da Groq:
+   https://console.groq.com
+
+2. Crie uma conta gratuita.
+
+3. Gere uma API Key.
+
+4. Copie a chave gerada para a variável `GROQ_API_KEY` no arquivo `.env`.
+
+## 5. Executar a Aplicação
+
+Inicie o servidor FastAPI com o Uvicorn:
+
+```bash
+uvicorn main:app --reload
+```
+
+A API ficará disponível em:
+
+```text
+http://localhost:8000
+```
+
+## 6. Acessar a Documentação da API
+
+### Swagger UI
+
+```text
+http://localhost:8000/docs
+```
+
+### ReDoc
+
+```text
+http://localhost:8000/redoc
+```
+
+# Como Executar a Aplicação (Front-end)
+
+Interface web do projeto **Interview Prep IA**, desenvolvida com **React + TypeScript + Vite**.
+
+O front-end é responsável por:
+
+* receber o currículo do usuário;
+* receber o texto da vaga;
+* enviar os dados para a API;
+* exibir o resultado da análise de compatibilidade;
+* apresentar pontos fortes, pontos fracos e habilidades faltantes;
+* permitir cenários adicionais, como:
+
+  * simulação de perguntas de entrevista;
+  * sugestões de melhoria;
+* exibir os retornos da IA de forma visual e organizada.
+
+---
+
+## Tecnologias utilizadas
+
+* React
+* TypeScript
+* Vite
+* Material UI (MUI)
+* Axios
+
+---
+
+## Pré-requisitos
+
+Antes de iniciar o front-end, certifique-se de ter instalado:
+
+* Node.js 18 ou superior
+* npm 9 ou superior
+
+---
+
+## 1. Acessar a pasta do front-end
+
+```bash
+cd frontend
+```
+
+---
+
+## 2. Instalar as dependências
+
+```bash
+npm install
+```
+
+---
+
+## 3. Configurar as variáveis de ambiente
+
+Crie um arquivo `.env` na raiz da pasta do front-end com o conteúdo:
+
+```env
+VITE_API_BASE_URL=http://localhost:8000/api/v1
+```
+
+Essa variável define o endereço base da API utilizada pelo front-end.
+
+---
+
+## 4. Executar o front-end em ambiente de desenvolvimento
+
+```bash
+npm run dev
+```
+
+A aplicação ficará disponível em:
+
+```text
+http://localhost:5173
+```
+
+---
+
+## Observação
+
+Para o funcionamento completo da aplicação, o back-end deve estar em execução antes de utilizar o front-end.
+
+O back-end deve estar disponível em:
+
+```text
+http://localhost:8000
+```
