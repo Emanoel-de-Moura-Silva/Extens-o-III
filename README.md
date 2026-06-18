@@ -322,3 +322,92 @@ http://localhost:8000/docs
 http://localhost:8000/redoc
 ```
 
+# Como Executar a Aplicação (Front-end)
+
+Interface web do projeto **Interview Prep IA**, desenvolvida com **React + TypeScript + Vite**.
+
+O front-end é responsável por:
+
+* receber o currículo do usuário;
+* receber o texto da vaga;
+* enviar os dados para a API;
+* exibir o resultado da análise de compatibilidade;
+* apresentar pontos fortes, pontos fracos e habilidades faltantes;
+* permitir cenários adicionais, como:
+
+  * simulação de perguntas de entrevista;
+  * sugestões de melhoria;
+* exibir os retornos da IA de forma visual e organizada.
+
+---
+
+## Tecnologias utilizadas
+
+* React
+* TypeScript
+* Vite
+* Material UI (MUI)
+* Axios
+
+---
+
+## Pré-requisitos
+
+Antes de iniciar o front-end, certifique-se de ter instalado:
+
+* Node.js 18 ou superior
+* npm 9 ou superior
+
+---
+
+## 1. Acessar a pasta do front-end
+
+```bash
+cd frontend
+```
+
+---
+
+## 2. Instalar as dependências
+
+```bash
+npm install
+```
+
+---
+
+## 3. Configurar as variáveis de ambiente
+
+Crie um arquivo `.env` na raiz da pasta do front-end com o conteúdo:
+
+```env
+VITE_API_BASE_URL=http://localhost:8000/api/v1
+```
+
+Essa variável define o endereço base da API utilizada pelo front-end.
+
+---
+
+## 4. Executar o front-end em ambiente de desenvolvimento
+
+```bash
+npm run dev
+```
+
+A aplicação ficará disponível em:
+
+```text
+http://localhost:5173
+```
+
+---
+
+## Observação
+
+Para o funcionamento completo da aplicação, o back-end deve estar em execução antes de utilizar o front-end.
+
+O back-end deve estar disponível em:
+
+```text
+http://localhost:8000
+```
