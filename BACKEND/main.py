@@ -1,7 +1,10 @@
 import os
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv # 1. Importe o dotenv
+
+# 2. Carregue as variáveis do arquivo .env antes de tudo
+load_dotenv() 
 
 #from database import client as mongo_client, db
 from routes.analyze import router as analyze_router
@@ -12,10 +15,17 @@ from routes.related_jobs import router as related_jobs_router
 
 app = FastAPI(title="Resume Analyzer API")
 
-origins = os.getenv("ORIGINS")
+# 3. Pega a variável do .env. Se ela não existir, usa "*" como padrão de segurança.
+origins_env = os.getenv("ORIGINS", "*")
+
+# 4. Transforma a string do .env em uma lista do Python (FastAPI exige lista)
+# Se no .env estiver: ORIGINS=http://localhost:3000,http://localhost:8000
+# Ele transforma em: ["http://localhost:3000", "http://localhost:8000"]
+origins = [origin.strip() for origin in origins_env.split(",")]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=origins, # Agora é garantido que isso é uma lista
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
