@@ -33,6 +33,9 @@ function HomePage() {
 
     const [improveResponse, setImproveResponse] = useState<ImproveResponse | null>(null);
 
+    const [loadingScenario, setLoadingScenario] = useState<ScenarioType | null>(null);
+    const [selectedScenarios, setSelectedScenarios] = useState<ScenarioType[]>([]);
+
     const respostaExtraRef = useRef<HTMLDivElement | null>(null);
 
     const { openLoading, closeLoading, isLoading } = useLoading();
@@ -52,6 +55,8 @@ function HomePage() {
         setRespostaExtraTitulo("");
         setRespostaExtraItems([]);
         setImproveResponse(null);
+        setLoadingScenario(null);
+        setSelectedScenarios([]);
 
         openLoading("Analisando vaga...");
 
@@ -74,14 +79,15 @@ function HomePage() {
 
             setErro(
                 error?.response?.data?.detail ||
-                error?.response?.data?.mensagem ||
-                error?.message ||
-                "Erro ao conectar com o servidor."
+                    error?.response?.data?.mensagem ||
+                    error?.message ||
+                    "Erro ao conectar com o servidor."
             );
         } finally {
             closeLoading();
         }
     };
+
     const montarResumeTextParaImprove = (resultado: AnalyzeResumeResponse) => {
         return `
 Título da vaga: ${resultado.titulo_vaga}
@@ -112,7 +118,12 @@ ${resultado.recomendacao}
     const handleSelectScenario = async (scenario: ScenarioType) => {
         if (!resultado) return;
 
+        if (loadingScenario) return;
+
+        if (selectedScenarios.includes(scenario)) return;
+
         setErro("");
+        setLoadingScenario(scenario);
 
         try {
             if (scenario === "interview") {
@@ -123,8 +134,8 @@ ${resultado.recomendacao}
                 setRespostaExtraTitulo("Perguntas simuladas da entrevista");
                 setRespostaExtraItems(
                     response?.perguntas ||
-                    response?.questions ||
-                    []
+                        response?.questions ||
+                        []
                 );
             }
 
@@ -146,6 +157,14 @@ ${resultado.recomendacao}
                 setImproveResponse(response);
             }
 
+            setSelectedScenarios((prev) => {
+                if (prev.includes(scenario)) {
+                    return prev;
+                }
+
+                return [...prev, scenario];
+            });
+
             setTimeout(() => {
                 respostaExtraRef.current?.scrollIntoView({
                     behavior: "smooth",
@@ -155,13 +174,15 @@ ${resultado.recomendacao}
         } catch (error: any) {
             setErro(
                 error?.response?.data?.detail ||
-                error?.response?.data?.mensagem ||
-                "Erro ao buscar conteúdo complementar."
+                    error?.response?.data?.mensagem ||
+                    "Erro ao buscar conteúdo complementar."
             );
         } finally {
+            setLoadingScenario(null);
             closeLoading();
         }
     };
+
     const handleConfirmJobDescription = (texto: string) => {
         setJobDescription(texto);
         setJobDescriptionDialogOpen(false);
@@ -175,6 +196,8 @@ ${resultado.recomendacao}
         setRespostaExtraTitulo("");
         setRespostaExtraItems([]);
         setImproveResponse(null);
+        setLoadingScenario(null);
+        setSelectedScenarios([]);
         setErro("");
     };
 
@@ -241,7 +264,9 @@ ${resultado.recomendacao}
                                 <Box>
                                     <JobCard
                                         jobDescription={jobDescription}
-                                        onOpenJobDescription={() => setJobDescriptionDialogOpen(true)}
+                                        onOpenJobDescription={() =>
+                                            setJobDescriptionDialogOpen(true)
+                                        }
                                         loading={isLoading}
                                     />
                                 </Box>
@@ -301,9 +326,10 @@ ${resultado.recomendacao}
 
                             <ChatBar
                                 visible={!!resultado}
-                                disabled={isLoading}
                                 nivelCompatibilidade={resultado?.nivel_compatibilidade}
                                 onSelectScenario={handleSelectScenario}
+                                loadingScenario={loadingScenario}
+                                selectedScenarios={selectedScenarios}
                             />
                         </Box>
                     </Fade>
@@ -324,6 +350,7 @@ ${resultado.recomendacao}
                         {erro}
                     </Paper>
                 )}
+
                 <JobDescriptionDialog
                     open={jobDescriptionDialogOpen}
                     initialValue={jobDescription}

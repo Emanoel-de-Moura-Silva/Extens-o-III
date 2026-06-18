@@ -7,6 +7,8 @@ type ChatBarProps = {
     disabled?: boolean;
     visible?: boolean;
     nivelCompatibilidade?: number;
+    loadingScenario?: ScenarioType | null;
+    selectedScenarios?: ScenarioType[];
 };
 
 function ChatBar({
@@ -14,6 +16,8 @@ function ChatBar({
     disabled = false,
     visible = true,
     nivelCompatibilidade,
+    loadingScenario = null,
+    selectedScenarios = [],
 }: ChatBarProps) {
     if (!visible) return null;
 
@@ -26,6 +30,26 @@ function ChatBar({
     const podeMelhorar =
         nivelCompatibilidade === undefined ||
         nivelCompatibilidade < 100;
+
+    const isScenarioDisabled = (scenario: ScenarioType) =>
+        disabled ||
+        loadingScenario === scenario ||
+        selectedScenarios.includes(scenario);
+
+    const getScenarioLabel = (
+        scenario: ScenarioType,
+        defaultLabel: string
+    ) => {
+        if (loadingScenario === scenario) {
+            return "Carregando...";
+        }
+
+        if (selectedScenarios.includes(scenario)) {
+            return `${defaultLabel} gerado`;
+        }
+
+        return defaultLabel;
+    };
 
     return (
         <Paper
@@ -48,18 +72,24 @@ function ChatBar({
             >
                 {podeSimularEntrevista && (
                     <Chip
-                        label="Simular perguntas"
+                        label={getScenarioLabel(
+                            "interview",
+                            "Simular perguntas"
+                        )}
                         clickable
-                        disabled={disabled}
+                        disabled={isScenarioDisabled("interview")}
                         onClick={() => onSelectScenario("interview")}
                     />
                 )}
 
                 {podeMelhorar && (
                     <Chip
-                        label="Como melhorar"
+                        label={getScenarioLabel(
+                            "improve",
+                            "Como melhorar"
+                        )}
                         clickable
-                        disabled={disabled}
+                        disabled={isScenarioDisabled("improve")}
                         onClick={() => onSelectScenario("improve")}
                     />
                 )}
