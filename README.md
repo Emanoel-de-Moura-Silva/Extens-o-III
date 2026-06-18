@@ -234,50 +234,91 @@ Backend/IA:
   * Sheets : https://docs.google.com/spreadsheets/d/1qG1PVusJjrarHl880kbnHyd6oDPCnAdaz7nyBqV7Qng/edit?usp=sharing
 
 
-##Como Executar a Aplicação BACK-END
-	Pré-requisitos
+# Como Executar a Aplicação (Back-end)
 
-	Antes de iniciar o projeto, certifique-se de ter instalado:
+## Pré-requisitos
 
-	*Python 3.10 ou superior
-	*Pip (gerenciador de pacotes do Python)
+Antes de iniciar o projeto, certifique-se de ter instalado:
 
-	1. Clonar o Projeto
-		*git clone <url-do-repositorio> - projeto global
-		*cd <nome-do-projeto> cd BACKEND
-	2. Criar e Ativar um Ambiente Virtual
-		Windows
-		*python -m venv venv
-		*venv\Scripts\activate
-		Linux/Mac
-		*python3 -m venv venv
-		*source venv/bin/activate
-	3. Instalar as Dependências
-	
-		Instale todas as bibliotecas necessárias:
-		
-		*pip install -r requirements.txt
-   4. Configurar as Variáveis de Ambiente
+* Python 3.10 ou superior
+* Pip (gerenciador de pacotes do Python)
 
-		*Crie ou edite o arquivo .env na raiz do projeto:
-		
-		*Adicione a variavel de ambiente = GROQ_API_KEY=sua_chave_groq
-		Obtendo a chave da Groq: 
-			*Acesse o console da Groq- https://console.groq.com
-			*Crie uma conta gratuita.
-			*Gere uma API Key.
-			*Copie a chave para a variável GROQ_API_KEY.
-  5. Executar a Aplicação
+## 1. Clonar o Projeto
 
-			Inicie o servidor FastAPI com o Uvicorn:
-			
-			*uvicorn main:app --reload
-			
-			A API ficará disponível em:
-			
-			*http://localhost:8000
-  6. Acessar a Documentação da API
+```bash
+git clone <url-do-repositorio>
+cd <nome-do-projeto>
+cd BACKEND
+```
 
-	Swagger UI:
+## 2. Criar e Ativar um Ambiente Virtual
 
-	*http://localhost:8000/docs
+### Windows
+
+```bash
+python -m venv venv
+venv\Scripts\activate
+```
+
+### Linux/Mac
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+## 3. Instalar as Dependências
+
+Instale todas as bibliotecas necessárias:
+
+```bash
+pip install -r requirements.txt
+```
+
+## 4. Configurar as Variáveis de Ambiente
+
+Crie um arquivo `.env` na raiz do projeto e adicione:
+
+```env
+GROQ_API_KEY=sua_chave_groq
+```
+
+### Obtendo a chave da Groq
+
+1. Acesse o console da Groq:
+   https://console.groq.com
+
+2. Crie uma conta gratuita.
+
+3. Gere uma API Key.
+
+4. Copie a chave gerada para a variável `GROQ_API_KEY` no arquivo `.env`.
+
+## 5. Executar a Aplicação
+
+Inicie o servidor FastAPI com o Uvicorn:
+
+```bash
+uvicorn main:app --reload
+```
+
+A API ficará disponível em:
+
+```text
+http://localhost:8000
+```
+
+## 6. Acessar a Documentação da API
+
+### Swagger UI
+
+```text
+http://localhost:8000/docs
+```
+
+### ReDoc
+
+```text
+http://localhost:8000/redoc
+```
+
