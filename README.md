@@ -232,3 +232,52 @@ Backend/IA:
 ## Documentação de reuniões
   * Trello : https://trello.com/invite/b/69f63fcf6520d5d9587b4ea3/ATTIc5e469a8cf53b2668568bddc40735799C93A7AD2/extensao-3
   * Sheets : https://docs.google.com/spreadsheets/d/1qG1PVusJjrarHl880kbnHyd6oDPCnAdaz7nyBqV7Qng/edit?usp=sharing
+
+
+##Como Executar a Aplicação BACK-END
+	Pré-requisitos
+
+	Antes de iniciar o projeto, certifique-se de ter instalado:
+
+	*Python 3.10 ou superior
+	*Pip (gerenciador de pacotes do Python)
+
+	1. Clonar o Projeto
+		*git clone <url-do-repositorio> - projeto global
+		*cd <nome-do-projeto> cd BACKEND
+	2. Criar e Ativar um Ambiente Virtual
+		Windows
+		*python -m venv venv
+		*venv\Scripts\activate
+		Linux/Mac
+		*python3 -m venv venv
+		*source venv/bin/activate
+	3. Instalar as Dependências
+	
+		Instale todas as bibliotecas necessárias:
+		
+		*pip install -r requirements.txt
+   4. Configurar as Variáveis de Ambiente
+
+		*Crie ou edite o arquivo .env na raiz do projeto:
+		
+		*Adicione a variavel de ambiente = GROQ_API_KEY=sua_chave_groq
+		Obtendo a chave da Groq: 
+			*Acesse o console da Groq- https://console.groq.com
+			*Crie uma conta gratuita.
+			*Gere uma API Key.
+			*Copie a chave para a variável GROQ_API_KEY.
+  5. Executar a Aplicação
+
+			Inicie o servidor FastAPI com o Uvicorn:
+			
+			*uvicorn main:app --reload
+			
+			A API ficará disponível em:
+			
+			*http://localhost:8000
+  6. Acessar a Documentação da API
+
+	Swagger UI:
+
+	*http://localhost:8000/docs
