@@ -299,7 +299,7 @@ GROQ_API_KEY=sua_chave_groq
 Inicie o servidor FastAPI com o Uvicorn:
 
 ```bash
-uvicorn main:app --reload
+python -m uvicorn main:app --reload
 ```
 
 A API ficará disponível em:
